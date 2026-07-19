@@ -35,15 +35,11 @@ yarn-error.log*
 .env.*
 !.env.example
 
-# vercel local link / local deploy helpers (never commit secrets or payloads)
-.vercel
-.vercel-deploy-payload.json
-
 # typescript build cache
 *.tsbuildinfo
 next-env.d.ts
 
-# local operational store (keeps GitHub clone small; Vercel uses MongoDB)
+# local operational store (keeps GitHub clone small; use MongoDB when you need a durable DB)
 /data
 /data/**
 
