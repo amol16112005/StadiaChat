@@ -1,0 +1,71 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# secrets & local env — never commit real keys
+.env
+.env.*
+!.env.example
+
+# vercel local link
+.vercel
+
+# typescript build cache
+*.tsbuildinfo
+next-env.d.ts
+
+# local operational store (keeps GitHub clone small; Vercel uses MongoDB)
+/data
+/data/**
+
+# volunteer photo uploads (can be large)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# large / local-only artifacts
+*.log
+*.zip
+*.7z
+*.rar
+*.mp4
+*.mov
+*.png
+*.jpg
+*.jpeg
+*.webp
+!public/**/*.svg
+
+# OS / IDE
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store
