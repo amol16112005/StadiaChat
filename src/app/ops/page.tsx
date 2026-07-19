@@ -326,7 +326,11 @@ export default function OpsPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen grid place-items-center text-[var(--muted)]">
+      <div
+        className="min-h-screen grid place-items-center text-[var(--muted)]"
+        role="status"
+        aria-live="polite"
+      >
         {t("en", "ops.init")}
       </div>
     );
@@ -334,46 +338,52 @@ export default function OpsPage() {
 
   return (
     <div className="min-h-screen" lang={lang}>
+      <a href="#ops-main" className="skip-link">
+        {t(lang, "ops.skipToMain")}
+      </a>
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[#0b1220f2] backdrop-blur px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="font-semibold tracking-wide">
+          <h1 className="font-semibold tracking-wide text-base">
             {t(lang, "ops.title")}
-          </div>
+          </h1>
           <div className="text-xs text-[var(--muted)]">
             {session.name} · {t(lang, "ops.tenancy")} {session.stadium_id} ·{" "}
             {t(lang, "ops.langLabel")} {lang}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <nav
+          className="flex items-center gap-2 flex-wrap"
+          aria-label={t(lang, "ops.navLabel")}
+        >
           <span className="badge badge-d">
             {t(lang, "ops.catD")}: {openCriticalIncidents.length}
           </span>
           <span className="badge badge-pending">
             {t(lang, "ops.pending")}: {pending.length}
           </span>
-          <nav className="flex gap-1 rounded-lg border border-[var(--border)] p-0.5 bg-[var(--panel)]">
-            <span className="btn btn-primary text-xs py-1.5 px-2.5 cursor-default">
+          <div className="flex gap-1 rounded-lg border border-[var(--border)] p-0.5 bg-[var(--panel)]">
+            <span className="btn btn-primary text-xs py-1.5 px-2.5 cursor-default" aria-current="page">
               {t(lang, "ops.navCritical")}
             </span>
             <Link href="/ops/timeline" className="btn text-xs py-1.5 px-2.5">
               {t(lang, "ops.navTimeline")}
             </Link>
-          </nav>
+          </div>
           <Link href="/profile" className="btn text-sm py-1.5">
             {t(lang, "common.profile")}
           </Link>
-          <button className="btn text-sm py-1.5" onClick={logout}>
+          <button type="button" className="btn text-sm py-1.5" onClick={logout}>
             {t(lang, "common.logout")}
           </button>
-        </div>
+        </nav>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 pt-4">
+      <main id="ops-main" className="max-w-7xl mx-auto px-4 pt-4 scroll-mt-20">
         {/* Operations Planning */}
-        <section className="card p-4 mb-4 border-blue-900/50">
+        <section className="card p-4 mb-4 border-blue-900/50" aria-labelledby="ops-plan-heading">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div>
-              <h2 className="text-sm font-semibold tracking-wide">
+              <h2 id="ops-plan-heading" className="text-sm font-semibold tracking-wide">
                 {t(lang, "ops.planningBoard")}
               </h2>
               <p className="text-xs text-[var(--muted)] mt-0.5">
@@ -391,8 +401,11 @@ export default function OpsPage() {
             className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4"
           >
             <div className="lg:col-span-1">
-              <label className="label">{t(lang, "ops.planTitle")}</label>
+              <label className="label" htmlFor="ops-plan-title">
+                {t(lang, "ops.planTitle")}
+              </label>
               <input
+                id="ops-plan-title"
                 className="input"
                 value={planTitle}
                 onChange={(e) => setPlanTitle(e.target.value)}
@@ -401,8 +414,11 @@ export default function OpsPage() {
               />
             </div>
             <div>
-              <label className="label">{t(lang, "ops.placeOfAssist")}</label>
+              <label className="label" htmlFor="ops-plan-loc">
+                {t(lang, "ops.placeOfAssist")}
+              </label>
               <select
+                id="ops-plan-loc"
                 className="input"
                 value={planLocation}
                 onChange={(e) => setPlanLocation(e.target.value)}
@@ -423,8 +439,11 @@ export default function OpsPage() {
               )}
             </div>
             <div>
-              <label className="label">{t(lang, "ops.priority")}</label>
+              <label className="label" htmlFor="ops-plan-pri">
+                {t(lang, "ops.priority")}
+              </label>
               <select
+                id="ops-plan-pri"
                 className="input"
                 value={planPriority}
                 onChange={(e) => setPlanPriority(e.target.value)}
@@ -437,8 +456,11 @@ export default function OpsPage() {
               </select>
             </div>
             <div>
-              <label className="label">{t(lang, "ops.timeWindow")}</label>
+              <label className="label" htmlFor="ops-plan-window">
+                {t(lang, "ops.timeWindow")}
+              </label>
               <input
+                id="ops-plan-window"
                 className="input"
                 value={planWindow}
                 onChange={(e) => setPlanWindow(e.target.value)}
@@ -446,8 +468,11 @@ export default function OpsPage() {
               />
             </div>
             <div className="md:col-span-2 lg:col-span-2">
-              <label className="label">{t(lang, "ops.planDesc")}</label>
+              <label className="label" htmlFor="ops-plan-desc">
+                {t(lang, "ops.planDesc")}
+              </label>
               <input
+                id="ops-plan-desc"
                 className="input"
                 value={planDesc}
                 onChange={(e) => setPlanDesc(e.target.value)}
@@ -455,8 +480,14 @@ export default function OpsPage() {
               />
             </div>
             <div className="md:col-span-2 lg:col-span-2">
-              <label className="label">{t(lang, "ops.assignVolunteers")}</label>
-              <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto rounded-lg border border-[var(--border)] p-2 bg-[#0d1526]">
+              <label className="label" id="ops-assign-label">
+                {t(lang, "ops.assignVolunteers")}
+              </label>
+              <div
+                className="flex flex-wrap gap-2 max-h-24 overflow-y-auto rounded-lg border border-[var(--border)] p-2 bg-[#0d1526]"
+                role="group"
+                aria-labelledby="ops-assign-label"
+              >
                 {approved.length === 0 && (
                   <span className="text-xs text-[var(--muted)]">
                     {t(lang, "ops.noApprovedVols")}
@@ -562,9 +593,8 @@ export default function OpsPage() {
             ))}
           </div>
         </section>
-      </div>
 
-      <div className="grid lg:grid-cols-12 gap-4 p-4 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-12 gap-4 pb-4">
         <aside className="lg:col-span-3 space-y-4">
           <section className="card p-4">
             <h2 className="text-sm font-semibold mb-3">
@@ -684,11 +714,20 @@ export default function OpsPage() {
             </Link>
           </div>
           {error && (
-            <div className="mb-2 text-sm text-red-300">{error}</div>
+            <div
+              className="mb-2 text-sm text-red-300"
+              role="alert"
+              aria-live="assertive"
+            >
+              {error}
+            </div>
           )}
           <div
             ref={containerRef}
             onScroll={onScroll}
+            role="log"
+            aria-live="polite"
+            aria-label={t(lang, "ops.feedLabel")}
             className="flex-1 overflow-y-auto chat-scroll space-y-3 pr-1"
           >
             {criticalMessages.length === 0 && (
@@ -853,7 +892,8 @@ export default function OpsPage() {
             </div>
           )}
         </aside>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

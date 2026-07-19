@@ -252,5 +252,12 @@
   "home.criteria5Body": "Protocol match before LLM, multi-model cascade with TTL, capped message polls, skip heavy Mongo mirrors on hot path.",
   "home.criteria6Label": "6 · Testing",
   "home.criteria6Body": "Automated unit tests for routing scope + rate limit; npm test / smoke scripts for regression.",
-  "home.skipToAccess": "Skip to secure access"
+  "home.skipToAccess": "Skip to secure access",
+  "vol.skipToComposer": "Skip to message composer",
+  "vol.navLabel": "Volunteer tools",
+  "vol.chatLabel": "Operational message feed",
+  "vol.composerLabel": "Send operational message",
+  "ops.skipToMain": "Skip to operations board",
+  "ops.navLabel": "Operations navigation",
+  "ops.feedLabel": "Stadium message feed"
 }

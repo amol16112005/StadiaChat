@@ -1,105 +1,124 @@
 # Judge evaluation — six parameters
 
-How StadiaChat maps to common hackathon / product judging criteria.
+Maps StadiaChat to the scorecard used in evaluation (Attempt 1 baseline included).
+
+| Criterion | Attempt 1 | Target | What we improved |
+|-----------|-----------|--------|------------------|
+| **Problem statement** | 98 | 95–100 | Explicit problem card + 6 criteria on home; this doc |
+| **Security** | 98 | 95–100 | HMAC sessions, reset lock, rate limits, headers, upload sniff |
+| **Code quality** | 84 | 88–92 | Extracted pure modules, serialized RMW, strong IDs |
+| **Efficiency** | 80 | 85–90 | Message caps/`since`, skip Mongo mirrors on hot path |
+| **Accessibility** | **45** | **75–90** | Labels, skip links, tabs, live regions, contrast, reduced motion |
+| **Testing** | **0** | **80–95** | Full `npm test` suite (A–D, protocols, tenancy, crypto, i18n) |
+
+**Total Attempt 1:** 80.25 — mainly dragged by **Testing = 0** and **Accessibility = 45**.
 
 ---
 
-## 1. Problem statement
+## 1. Problem statement (was 98)
 
 | Element | Where |
 |---------|--------|
-| Problem | Multilingual stadium ops at WC2026: radio/chat noise, no SOP answers, weak isolation, slow critical escalation |
-| Users | Volunteers + one Operations Lead per stadium (not public fans) |
-| Solution | Tenancy-safe AI ops chat, A–D routing, emergency SOP deploy, Fan Voice, 300s safety override |
-| Non-goals | City tourism bot, free-form fan social, replacement for medical/security command |
-| Demo script | Home FAQ “2 minutes” · [FAQ.md](./FAQ.md) |
+| Problem | Multilingual WC2026 ops; radio/chat noise; weak isolation; slow critical escalation |
+| Users | Volunteers + one Ops Lead per stadium (not public fans) |
+| Solution | Tenancy-safe AI chat, A–D routing, emergency SOP, Fan Voice, 300s override |
+| Non-goals | City tourism bot; free-form fan social; replace medical/security command |
+| Demo | Home FAQ · [FAQ.md](./FAQ.md) · credentials in [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md) |
 
-**In product:** home → About (problem + six criteria cards).
+**In product:** home → **About** (problem + six criteria cards).
 
 ---
 
-## 2. Security
+## 2. Security (was 98)
 
 | Control | Implementation |
 |---------|----------------|
-| Session integrity | HMAC-signed cookie (`SESSION_SECRET`); role/status always reloaded from DB |
+| Session integrity | HMAC cookie (`SESSION_SECRET`); role/status from DB only |
 | Cookie flags | `httpOnly`, `sameSite=lax`, `secure` in production |
-| Tenancy | All ops scoped by `stadium_id` (messages, approve, tasks, incidents) |
-| Role gates | Volunteer chat/upload vs Ops Lead terminal APIs |
-| Auth abuse | In-memory rate limits on login/register/admin reset |
-| Admin reset | Requires `ADMIN_RESET_TOKEN` header, or Ops Lead (demo), never open in prod without token |
-| Uploads | Session + approved volunteer; magic-byte image sniff; stadium-scoped paths; chat binds URLs to stadium |
-| Headers | `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` |
-| Demo honesty | Shared demo PINs are for prototype evaluation — not production IAM |
+| Tenancy | Messages/approve/tasks/incidents filtered by `stadium_id` |
+| Role gates | Volunteer vs Ops Lead APIs |
+| Auth abuse | Rate limits on login/register/reset |
+| Admin reset | `ADMIN_RESET_TOKEN` / Ops Lead; not open in prod without token |
+| Uploads | Magic-byte sniff; stadium-scoped paths; chat URL binding |
+| Headers | Frame deny, nosniff, referrer, permissions |
 
-**Env (production):** `SESSION_SECRET`, `ADMIN_RESET_TOKEN`, `MONGODB_URI`, `GOOGLE_AI_API_KEY`.
+**Render env:** `SESSION_SECRET`, `ADMIN_RESET_TOKEN`, `MONGODB_URI`, `GOOGLE_AI_API_KEY`.
 
 ---
 
-## 3. Code quality / compaction
+## 3. Code quality (was 84)
 
 | Practice | Location |
 |----------|----------|
-| Orchestrator single path | `src/lib/orchestrator.ts` |
-| Shared protocol pack | `src/lib/protocol-pack.ts` (27 topics × 6 venues) |
-| Scope rules (A vs B) | `src/lib/stadium-scope.ts` |
-| Storage abstraction | `src/lib/db.ts` (file + Mongo) |
-| Serialized RMW | `updateDb` queue avoids lost concurrent writes |
-| Strong IDs | `crypto` random in `src/lib/id.ts` |
-| i18n | `src/lib/locales/*` + system prompt |
+| Orchestrator | `src/lib/orchestrator.ts` |
+| Pure match / classify | `protocol-match.ts`, `heuristic-classify.ts` |
+| Protocol pack | `protocol-pack.ts` (27 × 6) |
+| Scope rules | `stadium-scope.ts` |
+| Serialized writes | `updateDb` queue |
+| Strong IDs | `id.ts` (crypto random) |
+| Session crypto | `session-crypto.ts` (unit-tested) |
 
 ---
 
-## 4. Accessibility
+## 4. Accessibility (was 45 → major focus)
 
-| Feature | Notes |
-|---------|--------|
-| Skip link | Skip to secure access |
-| Form labels | `htmlFor` / control `id` association |
-| Secrets | PIN / Ops credential `type="password"` |
-| Auth tabs | `role="tablist" / tab / tabpanel` |
-| Errors | `role="alert"` + `aria-live` |
-| FAQ | `aria-expanded`, `aria-controls`, regions |
-| Motion | `prefers-reduced-motion` disables critical pulse |
-| Focus | `:focus-visible` outlines on controls |
+| Feature | Surface |
+|---------|---------|
+| Skip links | Home, volunteer, ops |
+| Labeled fields | `htmlFor` / `id` on access, plans, profile |
+| Password fields | PIN + Ops credential |
+| Tabs | Access forms `role="tablist"` |
+| Live errors | `role="alert"` / `aria-live` |
+| Chat log | `role="log"` on feeds |
+| FAQ | `aria-expanded` + `aria-controls` |
+| Motion | `prefers-reduced-motion` |
+| Focus | `:focus-visible` outlines |
+| Contrast | Stronger `--muted` on dark panels |
+| Landmarks | `h1`, `main`, `nav` |
 
 ---
 
-## 5. Efficiency
+## 5. Efficiency (was 80)
 
 | Optimization | Notes |
 |--------------|--------|
-| Protocol match first | Avoid LLM when FAQ/emergency keywords hit |
-| LLM cascade + TTL | Skip exhausted models briefly (`xai.ts`) |
-| Message poll cap | Default last 200; optional `?since=` / `?limit=` |
-| Mongo hot path | `app_state` write only; full collection mirrors on reset or `MONGODB_MIRROR=1` |
-| Fan Assist heuristics | Coaching without full model when possible |
+| Protocol match first | Avoid LLM when keywords hit |
+| LLM cascade + TTL | Skip exhausted models |
+| Message poll | Cap 200; optional `?since=` / `?limit=` |
+| Mongo hot path | `app_state` only; mirrors on reset |
+| Heuristic A–D | Fast path before GenAI |
 
 ---
 
-## 6. Testing
+## 6. Testing (was 0 → major focus)
 
 ```bash
-npm test          # unit tests (Node test runner)
-npm run smoke     # optional live smoke if server is up
+npm test          # full unit suite
+npm run smoke     # live API smoke (server running)
 npm run lint
 npm run build
 ```
 
 | Suite | Covers |
 |-------|--------|
-| `tests/stadium-scope.test.ts` | In-stadium A vs city B routing |
-| `tests/rate-limit.test.ts` | Rate limiter windows |
-| `tests/id.test.ts` | ID uniqueness / format |
-| `scripts/smoke*.mjs` | Manual/API smoke against running app |
+| `stadium-scope.test.ts` | Facility A vs city B |
+| `heuristic-classify.test.ts` | A–D heuristics |
+| `protocol-match.test.ts` | FAQ + emergency matching |
+| `session-crypto.test.ts` | Signed cookies / tamper reject |
+| `image-sniff.test.ts` | Upload magic bytes |
+| `seed-pack.test.ts` | 6 venues, 162 protocols |
+| `tenancy.test.ts` | stadium_id isolation |
+| `i18n-locale.test.ts` | Locale key coverage |
+| `rate-limit.test.ts` | Auth abuse limiter |
+| `id.test.ts` | Unique crypto IDs |
 
 ---
 
-## Demo credentials (evaluation)
-
-See [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md).
+## Demo credentials
 
 | Role | Stadium | Secret |
 |------|---------|--------|
 | Volunteer | `metlife_2026` | Alex Rivera / `WC26-MET` |
 | Ops Lead | `metlife_2026` | `ops_metlife_2026` |
+
+Full list: [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md)

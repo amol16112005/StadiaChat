@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test tests/**/*.test.ts",
+    "test": "node --import ./tests/register.mjs --experimental-strip-types --test tests/**/*.test.ts",
     "smoke": "node scripts/smoke-full.mjs"
   },
   "dependencies": {

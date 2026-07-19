@@ -219,7 +219,11 @@ export default function VolunteerPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen grid place-items-center text-[var(--muted)]">
+      <div
+        className="min-h-screen grid place-items-center text-[var(--muted)]"
+        role="status"
+        aria-live="polite"
+      >
         {t("en", "common.loadingSession")}
       </div>
     );
@@ -227,15 +231,21 @@ export default function VolunteerPage() {
 
   return (
     <div className="min-h-screen flex flex-col max-w-3xl mx-auto" lang={lang}>
+      <a href="#composer" className="skip-link">
+        {t(lang, "vol.skipToComposer")}
+      </a>
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[#0b1220ee] backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
         <div>
-          <div className="font-semibold">{t(lang, "vol.title")}</div>
+          <h1 className="font-semibold text-base">{t(lang, "vol.title")}</h1>
           <div className="text-xs text-[var(--muted)]">
             {session.name} · {session.stadium_id} · {t(lang, "common.lang")}{" "}
             {session.preferred_language}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <nav
+          className="flex items-center gap-2 flex-wrap justify-end"
+          aria-label={t(lang, "vol.navLabel")}
+        >
           <FanVoiceAssist
             lang={lang}
             disabled={session.status !== "approved"}
@@ -252,14 +262,18 @@ export default function VolunteerPage() {
           >
             {statusLabel(lang, session.status)}
           </span>
-          <button className="btn text-sm py-1.5" onClick={logout}>
+          <button type="button" className="btn text-sm py-1.5" onClick={logout}>
             {t(lang, "common.logout")}
           </button>
-        </div>
+        </nav>
       </header>
 
       {session.status !== "approved" && (
-        <div className="mx-4 mt-4 rounded-lg border border-amber-800/50 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">
+        <div
+          className="mx-4 mt-4 rounded-lg border border-amber-800/50 bg-amber-950/30 px-3 py-2 text-sm text-amber-100"
+          role="status"
+          aria-live="polite"
+        >
           {t(lang, "vol.pendingBanner")}
         </div>
       )}
@@ -291,11 +305,13 @@ export default function VolunteerPage() {
                 </div>
                 <div className="text-sm font-semibold">{p.title}</div>
                 <div className="text-xs text-emerald-300 mt-1">
-                  📍 {p.location_tag}
+                  <span className="sr-only">{t(lang, "vol.location")}: </span>
+                  {p.location_tag}
                 </div>
                 {p.time_window && (
                   <div className="text-[11px] text-[var(--muted)]">
-                    ⏱ {p.time_window}
+                    <span className="sr-only">{t(lang, "ops.timeWindow")}: </span>
+                    {p.time_window}
                   </div>
                 )}
                 {p.description && (
@@ -309,10 +325,14 @@ export default function VolunteerPage() {
         </div>
       )}
 
-      <div
+      <main
         ref={containerRef}
         onScroll={onScroll}
         className="flex-1 overflow-y-auto chat-scroll px-4 py-4 space-y-3"
+        aria-label={t(lang, "vol.chatLabel")}
+        role="log"
+        aria-relevant="additions"
+        aria-live="polite"
       >
         {messages.length === 0 && (
           <p className="text-sm text-[var(--muted)] text-center mt-10">
@@ -329,10 +349,16 @@ export default function VolunteerPage() {
           />
         ))}
         <div ref={bottomRef} />
-      </div>
+      </main>
 
       {error && (
-        <div className="px-4 text-sm text-red-300 mb-2">{error}</div>
+        <div
+          className="px-4 text-sm text-red-300 mb-2"
+          role="alert"
+          aria-live="assertive"
+        >
+          {error}
+        </div>
       )}
 
       {photoPreview && (
@@ -360,17 +386,21 @@ export default function VolunteerPage() {
       )}
 
       <form
+        id="composer"
         onSubmit={send}
-        className="border-t border-[var(--border)] p-3 flex flex-col gap-2 bg-[#0b1220]"
+        className="border-t border-[var(--border)] p-3 flex flex-col gap-2 bg-[#0b1220] scroll-mt-20"
+        aria-label={t(lang, "vol.composerLabel")}
       >
         <div className="flex gap-2 items-end">
           <input
             ref={fileRef}
+            id="vol-photo-input"
             type="file"
             accept="image/*"
             capture="environment"
-            className="hidden"
+            className="sr-only"
             onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
+            aria-label={t(lang, "vol.addPhoto")}
           />
           <button
             type="button"
@@ -380,10 +410,15 @@ export default function VolunteerPage() {
             }
             onClick={() => fileRef.current?.click()}
             title={t(lang, "vol.photoHint")}
+            aria-label={t(lang, "vol.addPhoto")}
           >
-            {uploading ? "…" : `📷 ${t(lang, "vol.addPhoto")}`}
+            {uploading ? "…" : t(lang, "vol.addPhoto")}
           </button>
+          <label className="sr-only" htmlFor="vol-message-input">
+            {t(lang, "vol.placeholder")}
+          </label>
           <input
+            id="vol-message-input"
             className="input"
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -393,8 +428,10 @@ export default function VolunteerPage() {
                 : t(lang, "vol.awaiting")
             }
             disabled={session.status !== "approved" || sending}
+            autoComplete="off"
           />
           <button
+            type="submit"
             className="btn btn-primary shrink-0"
             disabled={
               session.status !== "approved" ||
@@ -410,7 +447,10 @@ export default function VolunteerPage() {
                 : t(lang, "common.send")}
           </button>
         </div>
-        <p className="text-sm sm:text-base font-medium leading-snug px-1 py-1.5 rounded-lg bg-sky-950/50 border border-sky-500/40 text-sky-100">
+        <p
+          id="vol-photo-hint"
+          className="text-sm sm:text-base font-medium leading-snug px-1 py-1.5 rounded-lg bg-sky-950/50 border border-sky-500/40 text-sky-100"
+        >
           {t(lang, "vol.photoHint")}
         </p>
       </form>

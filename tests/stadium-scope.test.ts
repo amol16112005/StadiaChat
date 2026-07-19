@@ -38,4 +38,16 @@ describe("stadium-scope facility vs city", () => {
       false
     );
   });
+
+  it("covers merch, guest services, wifi, prayer", () => {
+    assert.equal(isInStadiumFacilityQuery("where is the merch shop"), true);
+    assert.equal(isInStadiumFacilityQuery("guest services lost and found"), true);
+    assert.equal(isInStadiumFacilityQuery("is there wifi on the concourse"), true);
+    assert.equal(isInStadiumFacilityQuery("prayer room location"), true);
+  });
+
+  it("covers transit and weather as out of scope city patterns", () => {
+    assert.equal(isOutOfStadiumScope("uber to the airport"), true);
+    assert.equal(isOutOfStadiumScope("how is the weather"), true);
+  });
 });

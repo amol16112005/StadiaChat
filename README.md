@@ -23,7 +23,7 @@ The **AI Core Orchestrator** classifies every volunteer message into categories 
 **In the app:** home → **About** (problem + six criteria) · **FAQs** (judges / developers).
 
 ```bash
-npm test    # unit tests
+npm test    # 37 unit tests (A–D, tenancy, session crypto, protocols, a11y keys)
 npm run lint
 npm run build
 ```

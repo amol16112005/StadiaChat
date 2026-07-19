@@ -6,7 +6,7 @@
   --panel-2: #182338;
   --border: #243049;
   --text: #e8eef9;
-  --muted: #8b9bb8;
+  --muted: #a8b6d0;
   --accent: #3d8bfd;
   --accent-2: #22c55e;
   --warn: #f59e0b;
@@ -176,4 +176,17 @@ a:focus-visible {
 
 .skip-link:focus {
   top: 0.75rem;
+}
+
+/* Screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

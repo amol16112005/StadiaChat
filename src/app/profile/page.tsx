@@ -148,31 +148,44 @@ export default function ProfilePage() {
 
       <form onSubmit={save} className="card p-5 space-y-4">
         {error && (
-          <div className="rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+          <div
+            className="rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200"
+            role="alert"
+            aria-live="assertive"
+          >
             {error}
           </div>
         )}
         {message && (
-          <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200">
+          <div
+            className="rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200"
+            role="status"
+            aria-live="polite"
+          >
             {message}
           </div>
         )}
 
         <div>
-          <label className="label">{t(lang, "common.displayName")}</label>
+          <label className="label" htmlFor="profile-name">
+            {t(lang, "common.displayName")}
+          </label>
           <input
+            id="profile-name"
             className="input"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
             required
           />
         </div>
 
         <div>
-          <label className="label">
+          <label className="label" htmlFor="profile-lang">
             {t(lang, "common.preferredLanguage")}
           </label>
           <select
+            id="profile-lang"
             className="input"
             value={language}
             onChange={(e) => {
