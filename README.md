@@ -38,7 +38,7 @@ Longer narrative: [docs/WHY_STADIACHAT.md](./docs/WHY_STADIACHAT.md)
 | **i18n** | 11 UI languages; answers in volunteer language |
 | **Security** | Signed sessions, rate limits, upload sniff, locked admin reset |
 | **A11y** | Skip links, labels, password fields, live regions, reduced motion |
-| **Quality** | `npm test` (37 tests), lint, production build |
+| **Quality** | `npm test` (43 tests), lint, production build |
 | **Deploy** | GitHub → Render Web Service + MongoDB Atlas |
 
 Complete list: [docs/FEATURES.md](./docs/FEATURES.md)
@@ -73,7 +73,7 @@ Complete list: [docs/FEATURES.md](./docs/FEATURES.md)
 **In the app:** home → **About** (problem + criteria) · **Features** · **FAQs** (judges / developers).
 
 ```bash
-npm test    # 37 unit tests
+npm test    # 43 unit tests
 npm run lint
 npm run build
 ```
