@@ -35,8 +35,9 @@ yarn-error.log*
 .env.*
 !.env.example
 
-# vercel local link
+# vercel local link / local deploy helpers (never commit secrets or payloads)
 .vercel
+.vercel-deploy-payload.json
 
 # typescript build cache
 *.tsbuildinfo
