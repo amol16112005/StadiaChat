@@ -1,11 +1,22 @@
 # StadiaChat — FAQ (product + construction)
 
-Long-form answers that match the **Quick FAQs** section on the home page.  
-Also see: [SETUP.md](./SETUP.md) · [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) · [PROTOCOL_PACK.md](./PROTOCOL_PACK.md) · [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md)
+Long-form answers that match the **Quick FAQs** section on the home page.
+
+| Doc | Use |
+|-----|-----|
+| **[WHY_STADIACHAT.md](./WHY_STADIACHAT.md)** | Why this is the best fit (judges) |
+| **[FEATURES.md](./FEATURES.md)** | Full feature list |
+| [JUDGE_EVALUATION.md](./JUDGE_EVALUATION.md) | Six scorecard criteria |
+| [SETUP.md](./SETUP.md) · [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) | Construction & deploy |
+| [PROTOCOL_PACK.md](./PROTOCOL_PACK.md) · [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md) | SOPs & demos |
 
 ---
 
 ## For judges / product
+
+### Why is this better than a generic chatbot or radio-only ops?
+
+Radios and group chats do not triage A–D, do not isolate stadiums, and do not run a 300s safety override. Generic LLMs invent answers and mix venues. StadiaChat is **ops software**: tenancy, protocol library first, Lead workflow, emergency deploy, Fan Voice. Full argument: [WHY_STADIACHAT.md](./WHY_STADIACHAT.md). Feature list: [FEATURES.md](./FEATURES.md).
 
 ### What problem does StadiaChat solve?
 

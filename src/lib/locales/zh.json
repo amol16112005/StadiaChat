@@ -193,13 +193,13 @@
   "home.featuresLabel": "它能做什么",
   "home.featuresTitle": "端到端比赛日工作流",
   "home.feat1Title": "按体育场隔离的运营聊天",
-  "home.feat1Body": "每个会话锁定到 stadium_id、PIN 和角色。无跨场馆数据泄漏。",
+  "home.feat1Body": "Every session is locked to a stadium_id, PIN, and role. No cross-venue data bleed. Six WC2026 venues share one codebase with venue-specific landmarks.",
   "home.feat2Title": "AI Core 路由 (A–D)",
-  "home.feat2Body": "志愿者消息自动路由：协议常见问题、超出范围拒绝、轻微事件至 Ops Lead，或危急紧急协议。",
+  "home.feat2Body": "Protocol FAQs (A), city out-of-scope reject (B), minor floor issues to Ops Lead (C), or critical emergency SOPs + 300s safety override (D). Protocol match first; GenAI when needed.",
   "home.feat3Title": "Ops Lead 主控终端",
-  "home.feat3Body": "批准志愿者、分配任务卡、授权三选一处置，并以 300 秒安全覆盖处理严重警报。",
+  "home.feat3Body": "Approve volunteers, planning board (gates/sections), task cards, 3-option remediations, and serious alerts with a 300s safety override if the Lead does not act.",
   "home.feat4Title": "球迷语音协助",
-  "home.feat4Body": "为多语言球迷提供麦克风 + 扬声器。以其语言回答；需要动手协助时在聊天中辅导志愿者。",
+  "home.feat4Body": "Mic + speaker for multilingual fans. Spoken protocol answers; coaches the volunteer in chat when escort or hands-on help is required. Fans never log in.",
   "home.faqLabel": "Quick FAQs",
   "home.faqTitle": "For judges & developers",
   "home.faqIntro": "Product answers for judges, construction & deploy answers for engineers. Full written guide: docs/FAQ.md.",
@@ -259,5 +259,7 @@
   "vol.composerLabel": "Send operational message",
   "ops.skipToMain": "Skip to operations board",
   "ops.navLabel": "Operations navigation",
-  "ops.feedLabel": "Stadium message feed"
+  "ops.feedLabel": "Stadium message feed",
+  "home.whyBestTitle": "Why this is the best fit",
+  "home.whyBestBody": "Built for WC2026 matchday ops—not generic chat. Tenancy, A–D triage, emergency SOP deploy, Lead workflow, and Fan Voice together solve radio noise, SOP lag, and multilingual floor pressure. See docs/WHY_STADIACHAT.md and docs/FEATURES.md."
 }

@@ -2,6 +2,11 @@
 
 Maps StadiaChat to the scorecard used in evaluation (Attempt 1 baseline included).
 
+**Read first for product narrative:**
+
+- **[WHY_STADIACHAT.md](./WHY_STADIACHAT.md)** — why this is the best problem-aligned solution  
+- **[FEATURES.md](./FEATURES.md)** — complete, accurate feature inventory
+
 | Criterion | Attempt 1 | Target | What we improved |
 |-----------|-----------|--------|------------------|
 | **Problem statement** | 98 | 95–100 | Explicit problem card + 6 criteria on home; this doc |

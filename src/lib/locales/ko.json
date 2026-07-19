@@ -193,13 +193,13 @@
   "home.featuresLabel": "기능",
   "home.featuresTitle": "경기일 엔드투엔드 워크플로",
   "home.feat1Title": "경기장 격리 ops 채팅",
-  "home.feat1Body": "모든 세션은 stadium_id, PIN, 역할에 잠깁니다. 경기장 간 데이터 유출 없음.",
+  "home.feat1Body": "Every session is locked to a stadium_id, PIN, and role. No cross-venue data bleed. Six WC2026 venues share one codebase with venue-specific landmarks.",
   "home.feat2Title": "AI Core 라우팅 (A–D)",
-  "home.feat2Body": "자원봉사자 메시지를 자동 라우팅: 프로토콜 FAQ, 범위 외 거절, 경미 인시던트는 Ops Lead로, 또는 중요 비상 프로토콜.",
+  "home.feat2Body": "Protocol FAQs (A), city out-of-scope reject (B), minor floor issues to Ops Lead (C), or critical emergency SOPs + 300s safety override (D). Protocol match first; GenAI when needed.",
   "home.feat3Title": "Ops Lead 마스터 터미널",
-  "home.feat3Body": "자원봉사자 승인, 작업 카드 할당, 3옵션 조치 승인, 300초 안전 오버라이드로 심각 알림 처리.",
+  "home.feat3Body": "Approve volunteers, planning board (gates/sections), task cards, 3-option remediations, and serious alerts with a 300s safety override if the Lead does not act.",
   "home.feat4Title": "팬 보이스 어시스트",
-  "home.feat4Body": "다국어 팬을 위한 마이크 + 스피커. 해당 언어로 답변; 현장 도움이 필요할 때 채팅에서 자원봉사자를 코칭.",
+  "home.feat4Body": "Mic + speaker for multilingual fans. Spoken protocol answers; coaches the volunteer in chat when escort or hands-on help is required. Fans never log in.",
   "home.faqLabel": "Quick FAQs",
   "home.faqTitle": "For judges & developers",
   "home.faqIntro": "Product answers for judges, construction & deploy answers for engineers. Full written guide: docs/FAQ.md.",
@@ -259,5 +259,7 @@
   "vol.composerLabel": "Send operational message",
   "ops.skipToMain": "Skip to operations board",
   "ops.navLabel": "Operations navigation",
-  "ops.feedLabel": "Stadium message feed"
+  "ops.feedLabel": "Stadium message feed",
+  "home.whyBestTitle": "Why this is the best fit",
+  "home.whyBestBody": "Built for WC2026 matchday ops—not generic chat. Tenancy, A–D triage, emergency SOP deploy, Lead workflow, and Fan Voice together solve radio noise, SOP lag, and multilingual floor pressure. See docs/WHY_STADIACHAT.md and docs/FEATURES.md."
 }

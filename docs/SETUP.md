@@ -2,6 +2,11 @@
 
 How to build and run StadiaChat on your machine from the GitHub repo.
 
+Product context (not required to install):
+
+- **Why this solution:** [WHY_STADIACHAT.md](./WHY_STADIACHAT.md)  
+- **All features:** [FEATURES.md](./FEATURES.md)
+
 ---
 
 ## Requirements

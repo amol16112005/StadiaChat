@@ -193,13 +193,13 @@
   "home.featuresLabel": "ما الذي يفعله",
   "home.featuresTitle": "سير عمل يوم المباراة من البداية للنهاية",
   "home.feat1Title": "دردشة عمليات معزولة لكل ملعب",
-  "home.feat1Body": "كل جلسة مقفلة على stadium_id وPIN ودور. لا تسرب بيانات بين المواقع.",
+  "home.feat1Body": "Every session is locked to a stadium_id, PIN, and role. No cross-venue data bleed. Six WC2026 venues share one codebase with venue-specific landmarks.",
   "home.feat2Title": "توجيه AI Core (A–D)",
-  "home.feat2Body": "رسائل المتطوعين تُوجَّه تلقائيًا: أسئلة بروتوكول، رفض خارج النطاق، حوادث بسيطة إلى Ops Lead، أو بروتوكولات طوارئ حرجة.",
+  "home.feat2Body": "Protocol FAQs (A), city out-of-scope reject (B), minor floor issues to Ops Lead (C), or critical emergency SOPs + 300s safety override (D). Protocol match first; GenAI when needed.",
   "home.feat3Title": "المحطة الرئيسية لـ Ops Lead",
-  "home.feat3Body": "اعتماد المتطوعين، تعيين بطاقات المهام، تفويض معالجات بثلاث خيارات، والتعامل مع التنبيهات الخطيرة بتجاوز أمان 300 ثانية.",
+  "home.feat3Body": "Approve volunteers, planning board (gates/sections), task cards, 3-option remediations, and serious alerts with a 300s safety override if the Lead does not act.",
   "home.feat4Title": "مساعدة Fan Voice",
-  "home.feat4Body": "ميكروفون + مكبر صوت للجماهير متعددة اللغات. إجابات بلغتهم؛ تدريب المتطوع في الدردشة عند الحاجة لمساعدة عملية.",
+  "home.feat4Body": "Mic + speaker for multilingual fans. Spoken protocol answers; coaches the volunteer in chat when escort or hands-on help is required. Fans never log in.",
   "home.faqLabel": "Quick FAQs",
   "home.faqTitle": "For judges & developers",
   "home.faqIntro": "Product answers for judges, construction & deploy answers for engineers. Full written guide: docs/FAQ.md.",
@@ -259,5 +259,7 @@
   "vol.composerLabel": "Send operational message",
   "ops.skipToMain": "Skip to operations board",
   "ops.navLabel": "Operations navigation",
-  "ops.feedLabel": "Stadium message feed"
+  "ops.feedLabel": "Stadium message feed",
+  "home.whyBestTitle": "Why this is the best fit",
+  "home.whyBestBody": "Built for WC2026 matchday ops—not generic chat. Tenancy, A–D triage, emergency SOP deploy, Lead workflow, and Fan Voice together solve radio noise, SOP lag, and multilingual floor pressure. See docs/WHY_STADIACHAT.md and docs/FEATURES.md."
 }

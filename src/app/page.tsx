@@ -523,6 +523,14 @@ export default function HomePage() {
                 {t(language, "home.problemBody")}
               </p>
             </div>
+            <div className="card p-6 md:col-span-2 border-emerald-900/40">
+              <h3 className="font-semibold text-emerald-200 mb-2">
+                {t(language, "home.whyBestTitle")}
+              </h3>
+              <p className="text-sm text-[var(--muted)] leading-relaxed">
+                {t(language, "home.whyBestBody")}
+              </p>
+            </div>
             <div className="card p-6 md:col-span-2">
               <h3 className="font-semibold text-sky-200 mb-3">
                 {t(language, "home.criteriaTitle")}
