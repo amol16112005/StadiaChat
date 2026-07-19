@@ -1,17 +1,16 @@
 "use client";
 
-import {
-  useEffect,
-  useId,
-  useState,
-  isValidElement,
-  cloneElement,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGE_OPTIONS } from "@/lib/languages";
 import { t } from "@/lib/i18n";
+import { FormField } from "@/components/FormField";
+import {
+  DemoHint,
+  LanguageSelect,
+  SectionLabel,
+  StadiumSelect,
+} from "@/components/home/HomeUi";
 
 type Stadium = { id: string; name: string; city: string };
 type Tab = "volunteer" | "register" | "ops";
@@ -365,10 +364,10 @@ export default function HomePage() {
                       id="access-panel-volunteer"
                       aria-labelledby="access-tab-volunteer"
                     >
-                      <Field label={t(language, "home.preferredLanguage")}>
+                      <FormField label={t(language, "home.preferredLanguage")}>
                         <LanguageSelect value={language} onChange={setLang} />
-                      </Field>
-                      <Field label={t(language, "common.name")}>
+                      </FormField>
+                      <FormField label={t(language, "common.name")}>
                         <input
                           className="input"
                           value={name}
@@ -377,14 +376,14 @@ export default function HomePage() {
                           autoComplete="name"
                           required
                         />
-                      </Field>
+                      </FormField>
                       <StadiumSelect
                         stadiums={stadiums}
                         value={stadiumId}
                         onChange={setStadiumId}
                         lang={language}
                       />
-                      <Field label={t(language, "home.stadiumPin")}>
+                      <FormField label={t(language, "home.stadiumPin")}>
                         <input
                           className="input"
                           type="password"
@@ -394,7 +393,7 @@ export default function HomePage() {
                           autoComplete="current-password"
                           required
                         />
-                      </Field>
+                      </FormField>
                       <button
                         className="btn btn-primary w-full"
                         disabled={loading}
@@ -417,10 +416,10 @@ export default function HomePage() {
                       id="access-panel-register"
                       aria-labelledby="access-tab-register"
                     >
-                      <Field label={t(language, "home.preferredLanguage")}>
+                      <FormField label={t(language, "home.preferredLanguage")}>
                         <LanguageSelect value={language} onChange={setLang} />
-                      </Field>
-                      <Field label={t(language, "common.name")}>
+                      </FormField>
+                      <FormField label={t(language, "common.name")}>
                         <input
                           className="input"
                           value={name}
@@ -428,7 +427,7 @@ export default function HomePage() {
                           autoComplete="name"
                           required
                         />
-                      </Field>
+                      </FormField>
                       <StadiumSelect
                         stadiums={stadiums}
                         value={stadiumId}
@@ -460,16 +459,16 @@ export default function HomePage() {
                       id="access-panel-ops"
                       aria-labelledby="access-tab-ops"
                     >
-                      <Field label={t(language, "home.preferredLanguage")}>
+                      <FormField label={t(language, "home.preferredLanguage")}>
                         <LanguageSelect value={language} onChange={setLang} />
-                      </Field>
+                      </FormField>
                       <StadiumSelect
                         stadiums={stadiums}
                         value={stadiumId}
                         onChange={setStadiumId}
                         lang={language}
                       />
-                      <Field label={t(language, "home.masterCred")}>
+                      <FormField label={t(language, "home.masterCred")}>
                         <input
                           className="input"
                           type="password"
@@ -479,7 +478,7 @@ export default function HomePage() {
                           autoComplete="current-password"
                           required
                         />
-                      </Field>
+                      </FormField>
                       <button
                         className="btn btn-primary w-full"
                         disabled={loading}
@@ -695,120 +694,5 @@ export default function HomePage() {
         {t(language, "home.footer")}
       </footer>
     </main>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-300/90">
-      {children}
-    </div>
-  );
-}
-
-function DemoHint({
-  children,
-  lang,
-}: {
-  children: React.ReactNode;
-  lang: string;
-}) {
-  return (
-    <p className="text-[11px] text-[var(--muted)] leading-relaxed">
-      {t(lang, "home.demo")}:{" "}
-      <code className="text-blue-200/90">{children}</code>
-    </p>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  const autoId = useId();
-  const child = isValidElement(children)
-    ? cloneElement(children as ReactElement<{ id?: string }>, {
-        id: (children as ReactElement<{ id?: string }>).props.id || autoId,
-      })
-    : children;
-  const controlId =
-    (isValidElement(children) &&
-      (children as ReactElement<{ id?: string }>).props.id) ||
-    autoId;
-
-  return (
-    <div>
-      <label className="label" htmlFor={controlId}>
-        {label}
-      </label>
-      {child}
-    </div>
-  );
-}
-
-function LanguageSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <select
-      className="input"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {LANGUAGE_OPTIONS.map((o) => (
-        <option key={o.code} value={o.code}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function StadiumSelect({
-  stadiums,
-  value,
-  onChange,
-  lang = "en",
-}: {
-  stadiums: Stadium[];
-  value: string;
-  onChange: (v: string) => void;
-  lang?: string;
-}) {
-  return (
-    <div>
-      <Field label={t(lang, "home.stadiumLive")}>
-        <select
-          className="input"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          {(stadiums.length
-            ? stadiums
-            : [
-                {
-                  id: "metlife_2026",
-                  name: "MetLife Stadium",
-                  city: "East Rutherford",
-                },
-              ]
-          ).map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} · {s.city} ({s.id})
-            </option>
-          ))}
-        </select>
-      </Field>
-      <p className="text-[10px] text-[var(--muted)] mt-1">
-        {t(lang, "home.pinsDoc")}
-      </p>
-    </div>
   );
 }

@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
 import { processLeadTaskAssignment } from "@/lib/orchestrator";
 import { getDb, updateDb } from "@/lib/db";
+import { parseJsonBody, requireAuth, str } from "@/lib/http";
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session || session.user_role !== "Operations_Lead") {
-    return NextResponse.json({ error: "Operations Lead only." }, { status: 403 });
-  }
+  const auth = await requireAuth("Operations_Lead");
+  if (!auth.ok) return auth.response;
+  const { session } = auth;
 
-  const body = await req.json();
-  const volunteerId = String(body.volunteer_id || "").trim();
-  const command = String(body.command || "").trim();
+  const parsed = await parseJsonBody(req);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.body;
+
+  const volunteerId = str(body, "volunteer_id");
+  const command = str(body, "command");
   const location_tag = body.location_tag
     ? String(body.location_tag).trim()
     : undefined;
@@ -67,13 +69,14 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+  const { session } = auth;
 
-  const body = await req.json();
-  const messageId = String(body.message_id || "").trim();
+  const parsed = await parseJsonBody(req);
+  if (!parsed.ok) return parsed.response;
+
+  const messageId = str(parsed.body, "message_id");
   if (!messageId) {
     return NextResponse.json({ error: "message_id required" }, { status: 400 });
   }

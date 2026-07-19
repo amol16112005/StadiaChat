@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
-import { getUserById, updateUser } from "@/lib/db";
-import { getSession } from "@/lib/session";
-import { addMessage } from "@/lib/db";
+import { getUserById, updateUser, addMessage } from "@/lib/db";
 import { newId } from "@/lib/id";
 import { translateText } from "@/lib/xai";
+import { parseJsonBody, requireAuth, str } from "@/lib/http";
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session || session.user_role !== "Operations_Lead") {
-    return NextResponse.json({ error: "Operations Lead only." }, { status: 403 });
-  }
+  const auth = await requireAuth("Operations_Lead");
+  if (!auth.ok) return auth.response;
+  const { session } = auth;
 
-  const body = await req.json();
-  const userId = String(body.user_id || "").trim();
-  const action = String(body.action || "approve") as "approve" | "reject";
+  const parsed = await parseJsonBody(req);
+  if (!parsed.ok) return parsed.response;
+
+  const userId = str(parsed.body, "user_id");
+  const action = (str(parsed.body, "action") || "approve") as
+    | "approve"
+    | "reject";
 
   const user = await getUserById(userId);
   if (!user || user.stadium_id !== session.stadium_id) {
@@ -23,7 +25,10 @@ export async function POST(req: Request) {
     );
   }
   if (user.role !== "Volunteer") {
-    return NextResponse.json({ error: "Only volunteers can be approved." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Only volunteers can be approved." },
+      { status: 400 }
+    );
   }
 
   const status = action === "reject" ? "rejected" : "approved";

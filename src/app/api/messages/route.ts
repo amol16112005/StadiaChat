@@ -7,8 +7,13 @@ import {
 import { getSession } from "@/lib/session";
 import { processExpiredSeriousTimers } from "@/lib/orchestrator";
 
-const DEFAULT_MSG_LIMIT = 200;
-const MAX_MSG_LIMIT = 500;
+import {
+  DEFAULT_MESSAGE_LIMIT,
+  MAX_MESSAGE_LIMIT,
+} from "@/lib/ops-constants";
+
+const DEFAULT_MSG_LIMIT = DEFAULT_MESSAGE_LIMIT;
+const MAX_MSG_LIMIT = MAX_MESSAGE_LIMIT;
 
 function capMessages<T>(rows: T[], limit: number): T[] {
   if (rows.length <= limit) return rows;

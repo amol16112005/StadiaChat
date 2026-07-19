@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { resetDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { safeSecretEqual } from "@/lib/safe-equal";
 
 /**
  * Reseed operational DB.
@@ -12,9 +13,9 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
  */
 function authorized(req: Request, isOpsLead: boolean): boolean {
   const token = process.env.ADMIN_RESET_TOKEN?.trim();
-  const header = req.headers.get("x-admin-reset-token")?.trim();
+  const header = req.headers.get("x-admin-reset-token")?.trim() || "";
   if (token) {
-    return Boolean(header && header === token);
+    return safeSecretEqual(header, token);
   }
   if (isOpsLead) return true;
   return process.env.NODE_ENV !== "production";

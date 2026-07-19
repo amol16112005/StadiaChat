@@ -27,7 +27,9 @@ import {
   complete,
 } from "./xai";
 
-const TIMER_DURATION_S = 300;
+import { SAFETY_OVERRIDE_SECONDS } from "./ops-constants";
+
+const TIMER_DURATION_S = SAFETY_OVERRIDE_SECONDS;
 
 async function localized(
   text: string,

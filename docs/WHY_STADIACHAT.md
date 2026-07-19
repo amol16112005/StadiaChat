@@ -7,6 +7,9 @@ Full feature inventory: [FEATURES.md](./FEATURES.md).
 
 ## 1. The real problem (World Cup 2026)
 
+### One-sentence problem
+**WC2026 venues must coordinate thousands of multilingual volunteers under radio congestion, mixed SOP/incident/emergency traffic, and hard multi-stadium isolation — without leaving critical incidents unanswered.**
+
 Stadium matchday is not a generic “chatbot” use case.
 
 | Reality | What breaks |
@@ -16,6 +19,13 @@ Stadium matchday is not a generic “chatbot” use case.
 | **Life-safety** events (missing child, medical, fire, bag) | Latency and missed Lead action are unacceptable |
 | Multiple **venues** operating the same day | Data from one stadium must never leak to another |
 | Fans ask in **many languages** | Volunteers need mic/speaker help, not a public fan login |
+
+### Success criteria (product)
+1. SOP answers in seconds from **venue-local** protocols  
+2. City/tourism questions **do not** waste staff (hard Cat B)  
+3. Criticals either **deploy SOP now** or **page Lead + 300s override**  
+4. Zero cross-stadium data bleed  
+5. Fans helped **without** fan accounts  
 
 **StadiaChat is built only for that problem:** a **tenancy-safe operational AI channel** for volunteers and one Operations Lead per stadium — not a city guide, not a social app.
 
