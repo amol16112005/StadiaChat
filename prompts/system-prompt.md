@@ -42,9 +42,11 @@ When a user registers, they provide:
 
 - Name
 - Language
-- Stadium ID + PIN
+- Stadium ID
 
-If these parameters match database records:
+**Stadium PIN is NOT required at registration.** PIN is required only at volunteer **login** after the Operations Lead approves the account.
+
+If stadium ID is valid and the name is new at that venue:
 
 1. Output a systematic payload setting account `status: pending`
 2. Inform the user exactly:

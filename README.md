@@ -15,11 +15,18 @@ The **AI Core Orchestrator** classifies every volunteer message into categories 
 | [docs/SETUP.md](./docs/SETUP.md) | Local install, env vars, MongoDB, first run |
 | [docs/DEPLOY_RENDER.md](./docs/DEPLOY_RENDER.md) | Deploy to **Render** (step-by-step — you run this) |
 | [docs/FAQ.md](./docs/FAQ.md) | Product + construction FAQs (matches home page) |
+| [docs/JUDGE_EVALUATION.md](./docs/JUDGE_EVALUATION.md) | Six evaluation criteria: problem, security, quality, a11y, efficiency, testing |
 | [docs/STADIUM_CREDENTIALS.md](./docs/STADIUM_CREDENTIALS.md) | Demo stadium IDs, PINs, Ops credentials |
 | [docs/PROTOCOL_PACK.md](./docs/PROTOCOL_PACK.md) | Stadium protocol FAQs + emergency topics + sample questions |
 | [prompts/system-prompt.md](./prompts/system-prompt.md) | Canonical AI Core system rules |
 
-**In the app:** home page → **FAQs** (For judges / For developers).
+**In the app:** home → **About** (problem + six criteria) · **FAQs** (judges / developers).
+
+```bash
+npm test    # unit tests
+npm run lint
+npm run build
+```
 ---
 
 ## Quick start (local)

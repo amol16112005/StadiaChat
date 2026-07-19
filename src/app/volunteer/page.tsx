@@ -265,7 +265,11 @@ export default function VolunteerPage() {
       )}
 
       {remaining !== null && (
-        <div className="mx-4 mt-4 rounded-lg border border-red-700 bg-red-950/40 px-3 py-2 text-sm text-red-100 pulse-critical">
+        <div
+          className="mx-4 mt-4 rounded-lg border border-red-700 bg-red-950/40 px-3 py-2 text-sm text-red-100 pulse-critical"
+          role="alert"
+          aria-live="assertive"
+        >
           {t(lang, "vol.seriousTimer", { s: remaining })}
         </div>
       )}

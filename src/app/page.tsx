@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useState,
+  isValidElement,
+  cloneElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGE_OPTIONS } from "@/lib/languages";
 import { t } from "@/lib/i18n";
@@ -181,11 +189,17 @@ export default function HomePage() {
   ];
 
   return (
-    <main className="min-h-screen" lang={language}>
+    <main className="min-h-screen" lang={language} id="main">
+      <a href="#access" className="skip-link">
+        {t(language, "home.skipToAccess")}
+      </a>
       <header className="border-b border-[var(--border)] bg-[#0b1220cc] backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 grid place-items-center font-bold text-sm shadow-lg shadow-blue-900/40">
+            <div
+              className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 grid place-items-center font-bold text-sm shadow-lg shadow-blue-900/40"
+              aria-hidden
+            >
               SC
             </div>
             <div>
@@ -292,7 +306,11 @@ export default function HomePage() {
                     {t(language, "home.sessionBound")}
                   </p>
                 </div>
-                <div className="grid grid-cols-3 gap-1 px-2 mb-2">
+                <div
+                  className="grid grid-cols-3 gap-1 px-2 mb-2"
+                  role="tablist"
+                  aria-label={t(language, "home.secureAccess")}
+                >
                   {(
                     [
                       ["volunteer", "home.volunteer"],
@@ -303,6 +321,10 @@ export default function HomePage() {
                     <button
                       key={key}
                       type="button"
+                      role="tab"
+                      id={`access-tab-${key}`}
+                      aria-selected={tab === key}
+                      aria-controls={`access-panel-${key}`}
                       className={`btn text-xs py-2 ${tab === key ? "btn-primary" : ""}`}
                       onClick={() => {
                         setTab(key);
@@ -317,18 +339,32 @@ export default function HomePage() {
 
                 <div className="p-4 pt-2">
                   {error && (
-                    <div className="mb-3 rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+                    <div
+                      className="mb-3 rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200"
+                      role="alert"
+                      aria-live="assertive"
+                    >
                       {error}
                     </div>
                   )}
                   {info && (
-                    <div className="mb-3 rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200">
+                    <div
+                      className="mb-3 rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200"
+                      role="status"
+                      aria-live="polite"
+                    >
                       {info}
                     </div>
                   )}
 
                   {tab === "volunteer" && (
-                    <form onSubmit={onVolunteerLogin} className="space-y-3">
+                    <form
+                      onSubmit={onVolunteerLogin}
+                      className="space-y-3"
+                      role="tabpanel"
+                      id="access-panel-volunteer"
+                      aria-labelledby="access-tab-volunteer"
+                    >
                       <Field label={t(language, "home.preferredLanguage")}>
                         <LanguageSelect value={language} onChange={setLang} />
                       </Field>
@@ -338,6 +374,7 @@ export default function HomePage() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Alex Rivera"
+                          autoComplete="name"
                           required
                         />
                       </Field>
@@ -350,9 +387,11 @@ export default function HomePage() {
                       <Field label={t(language, "home.stadiumPin")}>
                         <input
                           className="input"
+                          type="password"
                           value={pin}
                           onChange={(e) => setPin(e.target.value)}
                           placeholder="WC26-MET"
+                          autoComplete="current-password"
                           required
                         />
                       </Field>
@@ -371,7 +410,13 @@ export default function HomePage() {
                   )}
 
                   {tab === "register" && (
-                    <form onSubmit={onRegister} className="space-y-3">
+                    <form
+                      onSubmit={onRegister}
+                      className="space-y-3"
+                      role="tabpanel"
+                      id="access-panel-register"
+                      aria-labelledby="access-tab-register"
+                    >
                       <Field label={t(language, "home.preferredLanguage")}>
                         <LanguageSelect value={language} onChange={setLang} />
                       </Field>
@@ -380,6 +425,7 @@ export default function HomePage() {
                           className="input"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
+                          autoComplete="name"
                           required
                         />
                       </Field>
@@ -407,7 +453,13 @@ export default function HomePage() {
                   )}
 
                   {tab === "ops" && (
-                    <form onSubmit={onOpsLogin} className="space-y-3">
+                    <form
+                      onSubmit={onOpsLogin}
+                      className="space-y-3"
+                      role="tabpanel"
+                      id="access-panel-ops"
+                      aria-labelledby="access-tab-ops"
+                    >
                       <Field label={t(language, "home.preferredLanguage")}>
                         <LanguageSelect value={language} onChange={setLang} />
                       </Field>
@@ -420,9 +472,11 @@ export default function HomePage() {
                       <Field label={t(language, "home.masterCred")}>
                         <input
                           className="input"
+                          type="password"
                           value={credential}
                           onChange={(e) => setCredential(e.target.value)}
                           placeholder="ops_metlife_2026"
+                          autoComplete="current-password"
                           required
                         />
                       </Field>
@@ -460,6 +514,32 @@ export default function HomePage() {
               <p className="text-sm text-[var(--muted)] leading-relaxed">
                 {t(language, "home.purposeBody")}
               </p>
+            </div>
+            <div className="card p-6">
+              <h3 className="font-semibold text-amber-200 mb-2">
+                {t(language, "home.problemTitle")}
+              </h3>
+              <p className="text-sm text-[var(--muted)] leading-relaxed">
+                {t(language, "home.problemBody")}
+              </p>
+            </div>
+            <div className="card p-6 md:col-span-2">
+              <h3 className="font-semibold text-sky-200 mb-3">
+                {t(language, "home.criteriaTitle")}
+              </h3>
+              <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-[var(--muted)]">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <li
+                    key={n}
+                    className="rounded-lg border border-[var(--border)] bg-black/20 px-3 py-2.5 leading-relaxed"
+                  >
+                    <span className="block text-xs font-semibold uppercase tracking-wide text-blue-300/90 mb-1">
+                      {t(language, `home.criteria${n}Label`)}
+                    </span>
+                    {t(language, `home.criteria${n}Body`)}
+                  </li>
+                ))}
+              </ul>
             </div>
             <div className="card p-6">
               <h3 className="font-semibold text-blue-300 mb-2">
@@ -552,23 +632,35 @@ export default function HomePage() {
           <div className="mt-6 space-y-2 max-w-3xl">
             {faqs.map((item, i) => {
               const open = openFaq === i;
+              const panelId = `faq-panel-${faqAudience}-${i}`;
+              const btnId = `faq-btn-${faqAudience}-${i}`;
               return (
                 <div key={`${faqAudience}-${i}`} className="card overflow-hidden">
                   <button
                     type="button"
+                    id={btnId}
                     className="w-full text-left px-4 py-3.5 flex items-start justify-between gap-3 hover:bg-white/[0.02]"
                     onClick={() => setOpenFaq(open ? null : i)}
                     aria-expanded={open}
+                    aria-controls={panelId}
                   >
                     <span className="font-medium text-sm md:text-base">
                       {item.q}
                     </span>
-                    <span className="text-[var(--muted)] shrink-0 text-lg leading-none mt-0.5">
+                    <span
+                      className="text-[var(--muted)] shrink-0 text-lg leading-none mt-0.5"
+                      aria-hidden
+                    >
                       {open ? "−" : "+"}
                     </span>
                   </button>
                   {open && (
-                    <div className="px-4 pb-4 text-sm text-[var(--muted)] leading-relaxed border-t border-[var(--border)] pt-3">
+                    <div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={btnId}
+                      className="px-4 pb-4 text-sm text-[var(--muted)] leading-relaxed border-t border-[var(--border)] pt-3"
+                    >
                       {item.a}
                     </div>
                   )}
@@ -626,12 +718,25 @@ function Field({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const autoId = useId();
+  const child = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ id?: string }>, {
+        id: (children as ReactElement<{ id?: string }>).props.id || autoId,
+      })
+    : children;
+  const controlId =
+    (isValidElement(children) &&
+      (children as ReactElement<{ id?: string }>).props.id) ||
+    autoId;
+
   return (
     <div>
-      <label className="label">{label}</label>
-      {children}
+      <label className="label" htmlFor={controlId}>
+        {label}
+      </label>
+      {child}
     </div>
   );
 }
@@ -670,30 +775,32 @@ function StadiumSelect({
   lang?: string;
 }) {
   return (
-    <Field label={t(lang, "home.stadiumLive")}>
-      <select
-        className="input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {(stadiums.length
-          ? stadiums
-          : [
-              {
-                id: "metlife_2026",
-                name: "MetLife Stadium",
-                city: "East Rutherford",
-              },
-            ]
-        ).map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name} · {s.city} ({s.id})
-          </option>
-        ))}
-      </select>
+    <div>
+      <Field label={t(lang, "home.stadiumLive")}>
+        <select
+          className="input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          {(stadiums.length
+            ? stadiums
+            : [
+                {
+                  id: "metlife_2026",
+                  name: "MetLife Stadium",
+                  city: "East Rutherford",
+                },
+              ]
+          ).map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} · {s.city} ({s.id})
+            </option>
+          ))}
+        </select>
+      </Field>
       <p className="text-[10px] text-[var(--muted)] mt-1">
         {t(lang, "home.pinsDoc")}
       </p>
-    </Field>
+    </div>
   );
 }

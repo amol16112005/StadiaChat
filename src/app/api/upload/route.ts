@@ -17,6 +17,43 @@ const ALLOWED = new Set([
   "image/heif",
 ]);
 
+function sniffImage(
+  buf: Buffer
+): { ext: string; mime: string } | null {
+  if (buf.length < 12) return null;
+  // JPEG
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return { ext: ".jpg", mime: "image/jpeg" };
+  }
+  // PNG
+  if (
+    buf[0] === 0x89 &&
+    buf[1] === 0x50 &&
+    buf[2] === 0x4e &&
+    buf[3] === 0x47
+  ) {
+    return { ext: ".png", mime: "image/png" };
+  }
+  // GIF
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) {
+    return { ext: ".gif", mime: "image/gif" };
+  }
+  // WEBP: RIFF....WEBP
+  if (
+    buf[0] === 0x52 &&
+    buf[1] === 0x49 &&
+    buf[2] === 0x46 &&
+    buf[3] === 0x46 &&
+    buf[8] === 0x57 &&
+    buf[9] === 0x45 &&
+    buf[10] === 0x42 &&
+    buf[11] === 0x50
+  ) {
+    return { ext: ".webp", mime: "image/webp" };
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) {
@@ -63,25 +100,23 @@ export async function POST(req: Request) {
     );
   }
 
-  const extFromName = path.extname(file.name || "").toLowerCase();
-  const extFromMime =
-    file.type === "image/png"
-      ? ".png"
-      : file.type === "image/webp"
-        ? ".webp"
-        : file.type === "image/gif"
-          ? ".gif"
-          : ".jpg";
-  const ext = extFromName && extFromName.length <= 5 ? extFromName : extFromMime;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  // Magic-byte sniff (do not trust client MIME alone)
+  const kind = sniffImage(buffer);
+  if (!kind) {
+    return NextResponse.json(
+      { error: "File content is not a recognized image (JPEG/PNG/WebP/GIF)." },
+      { status: 400 }
+    );
+  }
 
   const safeStadium = session.stadium_id.replace(/[^a-zA-Z0-9_-]/g, "_");
   const fileId = newId("img");
-  const filename = `${fileId}${ext}`;
+  const filename = `${fileId}${kind.ext}`;
   const relDir = path.join("uploads", safeStadium);
   const absDir = path.join(process.cwd(), "public", relDir);
   await fs.mkdir(absDir, { recursive: true });
 
-  const buffer = Buffer.from(await file.arrayBuffer());
   await fs.writeFile(path.join(absDir, filename), buffer);
 
   const url = `/${relDir.replace(/\\/g, "/")}/${filename}`;
@@ -91,7 +126,7 @@ export async function POST(req: Request) {
       id: fileId,
       url,
       name: file.name || filename,
-      mime: file.type || "image/jpeg",
+      mime: kind.mime,
       size: file.size,
     },
   });

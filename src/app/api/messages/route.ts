@@ -7,7 +7,15 @@ import {
 import { getSession } from "@/lib/session";
 import { processExpiredSeriousTimers } from "@/lib/orchestrator";
 
-export async function GET() {
+const DEFAULT_MSG_LIMIT = 200;
+const MAX_MSG_LIMIT = 500;
+
+function capMessages<T>(rows: T[], limit: number): T[] {
+  if (rows.length <= limit) return rows;
+  return rows.slice(rows.length - limit);
+}
+
+export async function GET(req: Request) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,6 +24,14 @@ export async function GET() {
   // Tick safety override timer on every poll
   await processExpiredSeriousTimers(session.stadium_id);
 
+  const url = new URL(req.url);
+  const limitRaw = Number(url.searchParams.get("limit") || DEFAULT_MSG_LIMIT);
+  const limit = Math.min(
+    MAX_MSG_LIMIT,
+    Math.max(20, Number.isFinite(limitRaw) ? limitRaw : DEFAULT_MSG_LIMIT)
+  );
+  const since = url.searchParams.get("since")?.trim() || "";
+
   const db = await getDb();
   const stadiumId = session.stadium_id;
 
@@ -23,13 +39,26 @@ export async function GET() {
     (p) => p.stadium_id === stadiumId
   );
 
+  const afterSince = <T extends { created_at: string }>(rows: T[]) => {
+    if (!since) return rows;
+    const t = new Date(since).getTime();
+    if (!Number.isFinite(t)) return rows;
+    return rows.filter((m) => new Date(m.created_at).getTime() > t);
+  };
+
   if (session.user_role === "Operations_Lead") {
-    const messages = db.messages
-      .filter((m) => m.stadium_id === stadiumId)
-      .sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
+    const messages = capMessages(
+      afterSince(
+        db.messages
+          .filter((m) => m.stadium_id === stadiumId)
+          .sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+          )
+      ),
+      limit
+    );
     const users = await getStadiumUsers(stadiumId);
     const incidents = await getStadiumIncidents(stadiumId);
     return NextResponse.json({
@@ -41,22 +70,29 @@ export async function GET() {
           new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       ),
       session,
+      meta: { limit, since: since || null },
     });
   }
 
   // Volunteer: own thread + system + tasks directed at them
-  const messages = db.messages
-    .filter(
-      (m) =>
-        m.stadium_id === stadiumId &&
-        (m.sender_id === session.user_id ||
-          m.recipient_id === session.user_id ||
-          (m.sender_role === "System" && m.recipient_id === session.user_id))
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
+  const messages = capMessages(
+    afterSince(
+      db.messages
+        .filter(
+          (m) =>
+            m.stadium_id === stadiumId &&
+            (m.sender_id === session.user_id ||
+              m.recipient_id === session.user_id ||
+              (m.sender_role === "System" &&
+                m.recipient_id === session.user_id))
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+    ),
+    limit
+  );
 
   const incidents = (await getStadiumIncidents(stadiumId)).filter(
     (i) => i.reporter_id === session.user_id
@@ -69,5 +105,11 @@ export async function GET() {
       p.status !== "completed"
   );
 
-  return NextResponse.json({ messages, incidents, plans, session });
+  return NextResponse.json({
+    messages,
+    incidents,
+    plans,
+    session,
+    meta: { limit, since: since || null },
+  });
 }

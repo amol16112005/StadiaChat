@@ -99,7 +99,10 @@ async function ensureMongoDb(): Promise<Database> {
   return seed;
 }
 
-async function writeMongoDb(db: Database): Promise<void> {
+async function writeMongoDb(
+  db: Database,
+  opts?: { mirror?: boolean }
+): Promise<void> {
   const mdb = await getMongoDb();
   if (!mdb) throw new Error("MongoDB not available");
 
@@ -114,7 +117,10 @@ async function writeMongoDb(db: Database): Promise<void> {
     } as any,
     { upsert: true }
   );
-  await mirrorCollections(db);
+  // Mirrors are optional (Compass). Default off on hot path for efficiency.
+  if (opts?.mirror || process.env.MONGODB_MIRROR === "1") {
+    await mirrorCollections(db);
+  }
 }
 
 /** Optional query-friendly mirrors (indexes for stadium filters) */
@@ -160,12 +166,12 @@ async function ensureDb(): Promise<Database> {
   return ensureFileDb();
 }
 
-async function writeDb(db: Database): Promise<void> {
+async function writeDb(db: Database, opts?: { mirror?: boolean }): Promise<void> {
   writeQueue = writeQueue.then(async () => {
     const backend = await resolveBackend();
     if (backend === "mongodb") {
       try {
-        await writeMongoDb(db);
+        await writeMongoDb(db, opts);
         return;
       } catch (e) {
         console.error("[db] mongo write failed, file fallback:", e);
@@ -181,13 +187,33 @@ export async function getDb(): Promise<Database> {
   return ensureDb();
 }
 
+/**
+ * Serialized read-modify-write so concurrent chat/ops cannot drop each other's updates.
+ */
 export async function updateDb(
   mutator: (db: Database) => void | Promise<void>
 ): Promise<Database> {
-  const db = await ensureDb();
-  await mutator(db);
-  await writeDb(db);
-  return db;
+  let result: Database | null = null;
+  writeQueue = writeQueue.then(async () => {
+    const db = await ensureDb();
+    await mutator(db);
+    const backend = await resolveBackend();
+    if (backend === "mongodb") {
+      try {
+        // Skip full collection mirrors on hot path — app_state is source of truth
+        await writeMongoDb(db, { mirror: false });
+        result = db;
+        return;
+      } catch (e) {
+        console.error("[db] mongo write failed, file fallback:", e);
+        cachedBackend = "file";
+      }
+    }
+    await writeFileDb(db);
+    result = db;
+  });
+  await writeQueue;
+  return result ?? ensureDb();
 }
 
 export async function resetDb(): Promise<Database> {
@@ -201,7 +227,8 @@ export async function resetDb(): Promise<Database> {
         await mdb.collection("memory_events").deleteMany({});
         await ensureMemoryIndexes(mdb);
       }
-      await writeMongoDb(seed);
+      // Full mirror rebuild only on reset (Compass-friendly tables)
+      await writeMongoDb(seed, { mirror: true });
       return seed;
     } catch (e) {
       console.error("[db] mongo reset failed:", e);

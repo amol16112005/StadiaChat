@@ -35,7 +35,12 @@ export async function POST(req: Request) {
       mime: String(a.mime || "image/jpeg"),
       size: Number(a.size || 0),
     }))
-    .filter((a: MessageAttachment) => a.url.startsWith("/uploads/"));
+    .filter((a: MessageAttachment) => {
+      if (!a.url.startsWith("/uploads/")) return false;
+      // Bind uploads to the session stadium folder
+      const stadiumSeg = session.stadium_id.replace(/[^a-zA-Z0-9_-]/g, "_");
+      return a.url.startsWith(`/uploads/${stadiumSeg}/`);
+    });
 
   if (!text && attachments.length === 0) {
     return NextResponse.json(

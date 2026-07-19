@@ -3,6 +3,7 @@ import { getDb, updateDb } from "@/lib/db";
 import { newId } from "@/lib/id";
 import { setSessionCookie } from "@/lib/session";
 import type { AuthSession } from "@/lib/types";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 /**
  * Registration does NOT require stadium PIN.
@@ -10,10 +11,24 @@ import type { AuthSession } from "@/lib/types";
  * After Ops Lead approves, login requires stadium PIN.
  */
 export async function POST(req: Request) {
-  const body = await req.json();
-  const name = String(body.name || "").trim();
-  const language = String(body.language || "en").trim() || "en";
-  const stadium_id = String(body.stadium_id || "").trim();
+  const ip = clientIp(req);
+  const rl = rateLimit(`auth-register:${ip}`, { limit: 15, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many registrations from this network. Try later." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+  const name = String(body.name || "").trim().slice(0, 80);
+  const language = String(body.language || "en").trim().slice(0, 12) || "en";
+  const stadium_id = String(body.stadium_id || "").trim().slice(0, 64);
 
   if (!name || !stadium_id) {
     return NextResponse.json(

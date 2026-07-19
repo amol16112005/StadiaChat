@@ -236,5 +236,21 @@
   "home.dq7": "How do I deploy to Render?",
   "home.da7": "docs/DEPLOY_RENDER.md. Web Service (not Static): Build npm install && npm run build · Start npm start · Branch main. Env: MONGODB_URI (required), GOOGLE_AI_API_KEY (recommended), MONGODB_DB=stadiachat. Atlas Network Access 0.0.0.0/0. Verify GET /api/health/storage shows mongodb.",
   "home.dq8": "Where are construction docs?",
-  "home.da8": "docs/SETUP.md (local build), docs/DEPLOY_RENDER.md (Render), docs/FAQ.md (this FAQ in long form), docs/STADIUM_CREDENTIALS.md, docs/PROTOCOL_PACK.md, README.md. Secrets only in .env.local or Render Environment — never commit."
+  "home.da8": "docs/SETUP.md (local build), docs/DEPLOY_RENDER.md (Render), docs/FAQ.md (this FAQ in long form), docs/STADIUM_CREDENTIALS.md, docs/PROTOCOL_PACK.md, README.md. Secrets only in .env.local or Render Environment — never commit.",
+  "home.problemTitle": "Problem statement",
+  "home.problemBody": "FIFA World Cup 2026 venues will staff thousands of multilingual volunteers. Radios and group chats do not scale: noisy channels, no protocol library, weak tenancy, and slow escalation when a critical incident needs an Operations Lead. StadiaChat is a stadium-isolated AI ops interface that answers SOPs instantly, routes A–D correctly, deploys emergency protocols, and helps volunteers assist fans via mic and speaker — with a 300s safety override if the Lead does not respond.",
+  "home.criteriaTitle": "How we address evaluation criteria",
+  "home.criteria1Label": "1 · Problem",
+  "home.criteria1Body": "Clear WC2026 ops problem, non-goals, demo script, and category model (A–D) documented on this page and in docs/.",
+  "home.criteria2Label": "2 · Security",
+  "home.criteria2Body": "HttpOnly signed sessions, stadium tenancy, role gates, rate-limited auth, protected admin reset, upload magic-byte checks, security headers.",
+  "home.criteria3Label": "3 · Code quality",
+  "home.criteria3Body": "Domain modules (orchestrator, protocols, scope), typed API, serialized DB writes, compact protocol pack shared across venues.",
+  "home.criteria4Label": "4 · Accessibility",
+  "home.criteria4Body": "Labeled fields, password inputs, skip link, tab semantics, live error regions, reduced-motion, focus-visible styles.",
+  "home.criteria5Label": "5 · Efficiency",
+  "home.criteria5Body": "Protocol match before LLM, multi-model cascade with TTL, capped message polls, skip heavy Mongo mirrors on hot path.",
+  "home.criteria6Label": "6 · Testing",
+  "home.criteria6Body": "Automated unit tests for routing scope + rate limit; npm test / smoke scripts for regression.",
+  "home.skipToAccess": "Skip to secure access"
 }

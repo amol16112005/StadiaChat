@@ -57,6 +57,8 @@ Edit **`.env.local`** in the project root (same folder as `package.json`).
 | `GOOGLE_AI_MODELS` | Optional | Comma-separated preferred model order |
 | `MONGODB_URI` | Optional locally | Without it → `data/db.json`. **Set this on Render.** |
 | `MONGODB_DB` | Optional | Database name (default `stadiachat`) |
+| `SESSION_SECRET` | Recommended (prod) | HMAC for session cookies |
+| `ADMIN_RESET_TOKEN` | Recommended (prod) | Protects `POST /api/admin/reset` |
 | `XAI_API_KEY` | Optional | Fallback GenAI if Google fails |
 | `XAI_MODEL` | Optional | Default `grok-4.5` when using xAI |
 

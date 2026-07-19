@@ -144,8 +144,17 @@ Atlas Network Access: `0.0.0.0/0` for Render. Not a Static Site.
 | [SETUP.md](./SETUP.md) | Local install & env |
 | [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) | Render deploy |
 | [FAQ.md](./FAQ.md) | This file |
+| [JUDGE_EVALUATION.md](./JUDGE_EVALUATION.md) | Six judge criteria (problem, security, quality, a11y, efficiency, testing) |
 | [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md) | Demo logins |
 | [PROTOCOL_PACK.md](./PROTOCOL_PACK.md) | Protocol FAQ topics |
 | [../README.md](../README.md) | Project overview |
 
 Secrets only in `.env.local` or Render **Environment** — never commit to GitHub.
+
+### How do I run tests?
+
+```bash
+npm test          # unit: stadium scope, rate limit, ids
+npm run lint
+npm run build
+```

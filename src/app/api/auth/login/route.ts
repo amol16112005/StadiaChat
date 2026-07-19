@@ -2,9 +2,24 @@ import { NextResponse } from "next/server";
 import { getDb, updateUser } from "@/lib/db";
 import { setSessionCookie } from "@/lib/session";
 import type { AuthSession } from "@/lib/types";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  const ip = clientIp(req);
+  const rl = rateLimit(`auth-login:${ip}`, { limit: 30, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Wait and try again." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
   const mode = String(body.mode || "volunteer");
   const language = body.language
     ? String(body.language).trim().toLowerCase()

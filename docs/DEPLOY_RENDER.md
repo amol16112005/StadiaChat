@@ -93,6 +93,8 @@ In the same create flow, or later under **Environment** → **Environment Variab
 | `GOOGLE_AI_API_KEY` | Recommended | From [AI Studio](https://aistudio.google.com/apikey) |
 | `MONGODB_URI` | **Yes for production** | Full `mongodb+srv://…` string |
 | `MONGODB_DB` | Optional | `stadiachat` |
+| `SESSION_SECRET` | **Recommended** | Long random string (HMAC session cookies) |
+| `ADMIN_RESET_TOKEN` | **Recommended** | Protects `POST /api/admin/reset` |
 | `XAI_API_KEY` | Optional | Fallback GenAI |
 | `XAI_MODEL` | Optional | e.g. `grok-4.5` |
 | `NODE_VERSION` | If build fails | `22.16.0` |
