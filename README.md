@@ -32,11 +32,15 @@ The AI Core (`src/lib/xai.ts`) uses **Google AI Studio first** and **does not pi
 
 **GitHub:** [amol16112005/StadiaChat](https://github.com/amol16112005/StadiaChat) (source only; secrets never committed).
 
-### One-click import
+### Import existing GitHub repo (recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Famol16112005%2FStadiaChat&env=GOOGLE_AI_API_KEY,MONGODB_URI,MONGODB_DB&envDescription=AI%20and%20MongoDB%20secrets%20(set%20in%20Vercel%20only)&project-name=stadiachat&repository-name=StadiaChat)
+You already have the repo — do **not** use “clone template” (that tries to create another GitHub repo named StadiaChat).
 
-Or: [vercel.com/new](https://vercel.com/new) → **Import** `amol16112005/StadiaChat`.
+1. Open: [Import StadiaChat on Vercel](https://vercel.com/new/import?s=https://github.com/amol16112005/StadiaChat)  
+   or [vercel.com/new](https://vercel.com/new) → **Import Git Repository** → pick **`amol16112005/StadiaChat`**.
+2. **Project Name** can stay `stadiachat`, or use something unique if that Vercel name is taken (e.g. `stadiachat-wc2026`).
+3. Leave **Root Directory** empty, Framework **Next.js** (auto-detected).
+4. Add env vars below → **Deploy**.
 
 ### Environment variables (Vercel → Project → Settings → Environment Variables)
 
