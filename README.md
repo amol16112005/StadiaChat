@@ -28,6 +28,41 @@ GOOGLE_AI_API_KEY=your_key_from_https://aistudio.google.com/apikey
 
 The AI Core (`src/lib/xai.ts`) uses **Google AI Studio first** and **does not pin one model**. It discovers available Gemini models and tries each until one with remaining quota replies (then remembers that model). Optional preferred order: `GOOGLE_AI_MODELS=...`. Optional fallback: `XAI_API_KEY`. Without any key, heuristics + protocol library still work.
 
+## Deploy (public Vercel)
+
+**GitHub:** [amol16112005/StadiaChat](https://github.com/amol16112005/StadiaChat) (source only; secrets never committed).
+
+### One-click import
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Famol16112005%2FStadiaChat&env=GOOGLE_AI_API_KEY,MONGODB_URI,MONGODB_DB&envDescription=AI%20and%20MongoDB%20secrets%20(set%20in%20Vercel%20only)&project-name=stadiachat&repository-name=StadiaChat)
+
+Or: [vercel.com/new](https://vercel.com/new) → **Import** `amol16112005/StadiaChat`.
+
+### Environment variables (Vercel → Project → Settings → Environment Variables)
+
+| Name | Required | Notes |
+|------|----------|--------|
+| `GOOGLE_AI_API_KEY` | Recommended | From [Google AI Studio](https://aistudio.google.com/apikey) |
+| `MONGODB_URI` | Recommended on Vercel | Atlas connection string (file DB is not durable on serverless) |
+| `MONGODB_DB` | Optional | Default `stadiachat` |
+| `XAI_API_KEY` | Optional | Fallback GenAI |
+
+Apply to **Production** (and Preview if you want). Redeploy after saving.
+
+### MongoDB Atlas for Vercel
+
+1. Network Access → allow `0.0.0.0/0` (serverless has dynamic IPs), or use Atlas private networking on paid tiers.  
+2. Database user with read/write on the app database.  
+3. Paste the `mongodb+srv://…` URI into Vercel (not into git).
+
+### CLI alternative (after `vercel login`)
+
+```bash
+npx vercel link
+npx vercel env pull   # optional local sync
+npx vercel --prod
+```
+
 ### Stadium credentials
 
 All demo stadium IDs, volunteer PINs, and Ops credentials:  
