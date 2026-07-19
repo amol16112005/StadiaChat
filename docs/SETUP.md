@@ -178,6 +178,21 @@ StadiaChat/
 
 ---
 
+## 9. Construction FAQ (short)
+
+| Question | Answer |
+|----------|--------|
+| Node version? | **20+** (`engines` in `package.json`) |
+| Must I use Mongo locally? | No — file `data/db.json` works for demos |
+| Must I use Mongo on Render? | **Yes** — disk is temporary |
+| Where are demo PINs? | [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md) |
+| What can volunteers ask (Cat A)? | 16 facility FAQs — [PROTOCOL_PACK.md](./PROTOCOL_PACK.md) |
+| Full product + eng FAQ? | [FAQ.md](./FAQ.md) (also on home page → **For developers**) |
+
+Home page accordion FAQs use the same content as `docs/FAQ.md` (via `src/lib/locales/*.json`).
+
+---
+
 ## Next step
 
 Deploy to production: **[DEPLOY_RENDER.md](./DEPLOY_RENDER.md)** (you perform the deploy; that doc is instructions only).

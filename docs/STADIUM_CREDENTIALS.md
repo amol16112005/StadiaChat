@@ -66,3 +66,5 @@ Example: stadium `azteca_2026` · credential `ops_azteca_2026` · language `es`
 
 - Local setup: [SETUP.md](./SETUP.md)
 - Render deploy: [DEPLOY_RENDER.md](./DEPLOY_RENDER.md)
+- Product + construction FAQs: [FAQ.md](./FAQ.md)
+- Protocol FAQ topics: [PROTOCOL_PACK.md](./PROTOCOL_PACK.md)

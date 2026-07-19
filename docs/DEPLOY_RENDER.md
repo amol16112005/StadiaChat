@@ -203,3 +203,17 @@ Env (minimum):
 ```
 
 You deploy; this file is the checklist only. Local construction details stay in [SETUP.md](./SETUP.md).
+
+---
+
+## Deploy FAQ (short)
+
+| Question | Answer |
+|----------|--------|
+| Static Site or Web Service? | **Web Service** (API routes + `next start`) |
+| Why Mongo? | Render disk is ephemeral; without Atlas, data resets |
+| Atlas “public”? | Network Access `0.0.0.0/0` + strong DB user password is normal for PaaS |
+| Health check URL? | `GET /api/health/storage` → `active_backend: mongodb` |
+| Demo login on live URL? | Same as local — [STADIUM_CREDENTIALS.md](./STADIUM_CREDENTIALS.md) |
+| Cold start slow? | Free tier spins down when idle; first hit can take 30–60s |
+| Full FAQ? | [FAQ.md](./FAQ.md) · home page **For developers** |

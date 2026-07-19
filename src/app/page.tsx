@@ -158,11 +158,11 @@ export default function HomePage() {
     setInfo("");
   }
 
-  const judgeFaqs = [1, 2, 3, 4, 5].map((n) => ({
+  const judgeFaqs = [1, 2, 3, 4, 5, 6].map((n) => ({
     q: t(language, `home.jq${n}`),
     a: t(language, `home.ja${n}`),
   }));
-  const devFaqs = [1, 2, 3, 4, 5, 6].map((n) => ({
+  const devFaqs = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
     q: t(language, `home.dq${n}`),
     a: t(language, `home.da${n}`),
   }));
