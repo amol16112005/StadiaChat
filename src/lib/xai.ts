@@ -420,20 +420,124 @@ Available FAQ protocol titles at this stadium: ${faqTitles.join("; ") || "(none)
     }
   }
 
-  return heuristicClassify(text) ?? "C";
+  // Prefer FAQ/GenAI path for question-shaped text; only default floor unknowns to C
+  const fallback = heuristicClassify(text);
+  if (fallback) return fallback;
+  const t = text.toLowerCase();
+  if (
+    /[?]/.test(t) ||
+    /^(where|what|how|when|which|who|can i|do i|is there|are there)\b/.test(t) ||
+    /\b(where is|how's|how do i|what is|need (info|directions))\b/.test(t)
+  ) {
+    return "A";
+  }
+  return "C";
+}
+
+/**
+ * Generate a contextual GenAI reply for the volunteer chat timeline.
+ * Returns null when no LLM is available (callers must supply a fallback).
+ */
+export async function generateVolunteerChatReply(input: {
+  stadiumId: string;
+  language: string;
+  query: string;
+  /** Official protocol text to ground the answer (Category A) */
+  protocolTitle?: string;
+  protocolBody?: string;
+  protocolTitles?: string[];
+  memoryBlock?: string;
+  mode: "faq" | "incident_ack" | "serious_ack";
+  hasPhoto?: boolean;
+}): Promise<string | null> {
+  const {
+    stadiumId,
+    language,
+    query,
+    protocolTitle,
+    protocolBody,
+    protocolTitles,
+    memoryBlock,
+    mode,
+    hasPhoto,
+  } = input;
+
+  if (mode === "faq") {
+    const grounded = protocolBody
+      ? `SOURCE OF TRUTH (official stadium protocol — do not contradict; you may rephrase and apply to the volunteer's exact question):\nTitle: ${protocolTitle || "Protocol"}\n${protocolBody}`
+      : `No exact protocol matched. Use general FIFA WC 2026 stadium ops knowledge for this venue. Known protocol titles: ${(protocolTitles || []).join("; ") || "(none)"}. Prefer concrete locations, signs, and next actions.`;
+
+    return complete(
+      `You are StadiaChat Core for FIFA World Cup 2026 stadium volunteers.
+Answer the volunteer's operational question in chat.
+Rules:
+- Reply in language code: ${language}
+- Concise, action-oriented, no pleasantries or filler
+- Preserve gate/section/radio IDs as literals
+- Never invent a different stadium
+- Never answer only about restrooms unless asked
+- Never refuse in-stadium facilities as tourism
+- 2–6 short sentences or tight bullets max
+- Make the answer specific to THIS question — do not paste a generic template`,
+      `Stadium: ${stadiumId}
+${grounded}
+${memoryBlock ? `Recent context:\n${memoryBlock}` : ""}
+Volunteer question: ${query}`,
+      { temperature: 0.35 }
+    );
+  }
+
+  if (mode === "incident_ack") {
+    return complete(
+      `You are StadiaChat Core. A minor floor incident was just logged to the Stadium Operations Lead.
+Write a short volunteer-facing acknowledgment (language: ${language}).
+Rules:
+- Confirm the issue was logged with Ops Lead
+- Briefly restate what was reported (paraphrase, 1 clause)
+- Tell them to hold position / keep radio ready for Lead direction
+- ${hasPhoto ? "Acknowledge photo evidence was attached." : "No photo was attached."}
+- 2–4 sentences max, no fluff, unique to this report`,
+      `Stadium: ${stadiumId}\nIncident report: ${query}`,
+      { temperature: 0.4 }
+    );
+  }
+
+  // serious_ack
+  return complete(
+    `You are StadiaChat Core. A SERIOUS unresolved incident was escalated to the Stadium Operations Lead with a safety timer.
+Write a short volunteer-facing acknowledgment (language: ${language}).
+Rules:
+- Confirm SERIOUS escalation to Ops Lead
+- Briefly restate the hazard reported
+- Give 2–3 immediate on-scene safety holds (defensive, no heroics)
+- Note Ops Lead or automated GenAI safety directive will follow shortly if Lead does not respond in time
+- ${hasPhoto ? "Acknowledge photo evidence." : ""}
+- 3–6 short sentences or numbered steps, specific to this report`,
+    `Stadium: ${stadiumId}\nSerious report: ${query}`,
+    { temperature: 0.3 }
+  );
 }
 
 export async function generateRemediationOptions(
   text: string,
-  severity: "normal" | "serious"
+  severity: "normal" | "serious",
+  context?: { stadiumId?: string; reporterName?: string; hasPhoto?: boolean }
 ): Promise<string[]> {
-  const system = `You generate exactly 3 concise remediation options for a stadium Operations Lead.
+  const system = `You generate exactly 3 DISTINCT remediation options for a stadium Operations Lead (FIFA WC 2026).
 Severity: ${severity}
-Return JSON: {"options":["...","...","..."]}
-Each option is one short actionable directive a lead can authorize (max 12 words).
+Return JSON only: {"options":["...","...","..."]}
+Each option is one short actionable directive the Lead can authorize (max 14 words).
+Options MUST be specific to THIS incident (locations, hazard type) — never generic clones.
 No filler. Operational language only.`;
 
-  const result = await complete(system, text, { json: true, temperature: 0.3 });
+  const result = await complete(
+    system,
+    `Stadium: ${context?.stadiumId || "unknown"}
+Reporter: ${context?.reporterName || "volunteer"}
+Photo evidence: ${context?.hasPhoto ? "yes" : "no"}
+Incident: ${text}`,
+    { json: true, temperature: 0.45 }
+  );
   if (result) {
     try {
       const cleaned = result.replace(/```json\n?|\n?```/g, "").trim();
@@ -446,32 +550,233 @@ No filler. Operational language only.`;
     }
   }
 
+  const loc = extractLocation(text);
   if (severity === "serious") {
     return [
-      "Cordon area and halt non-essential traffic",
-      "Dispatch medical/facilities team to location",
-      "Evacuate adjacent sections to secondary routes",
+      `Cordon ${loc} and halt non-essential traffic`,
+      `Dispatch medical/security team to ${loc}`,
+      `Hold adjacent sections; radio Command with status`,
     ];
   }
   return [
-    "Dispatch nearest volunteer with cleanup kit",
-    "Restock from supply cage and confirm complete",
-    "Reassign floor steward to cover until resolved",
+    `Send cleanup/support kit to ${loc}`,
+    `Restock or fix issue at ${loc}; confirm complete`,
+    `Reassign nearest steward to cover ${loc} until resolved`,
   ];
 }
 
-export async function generateSafetyDirective(text: string): Promise<string> {
-  const system = `You are the StadiaChat Critical Threat safety override engine for FIFA World Cup 2026.
-Ops Lead did not respond within 300 seconds. Produce a defensive, high-caution safety directive for the reporting volunteer to stabilize the scene.
-Rules: concise, numbered steps, no fluff, prioritize life safety and scene containment. Output plain text only.`;
+/**
+ * GenAI briefing shown on the Operations Lead master terminal for an incident.
+ */
+export async function generateOpsIncidentBriefing(input: {
+  stadiumId: string;
+  opsLanguage: string;
+  reporterName: string;
+  incidentText: string;
+  severity: "normal" | "serious";
+  hasPhoto?: boolean;
+  protocolTitle?: string;
+  remediationOptions?: string[];
+}): Promise<string | null> {
+  const {
+    stadiumId,
+    opsLanguage,
+    reporterName,
+    incidentText,
+    severity,
+    hasPhoto,
+    protocolTitle,
+    remediationOptions,
+  } = input;
 
-  const result = await complete(system, `Incident report: ${text}`, {
-    temperature: 0.1,
-  });
+  return complete(
+    `You are StadiaChat Core — GenAI co-pilot for the Stadium Operations Lead (FIFA World Cup 2026).
+Write an OPS LEAD briefing for the master terminal (not the volunteer).
+Language: ${opsLanguage}
+Rules:
+- Lead with severity tag: ${severity === "serious" ? "[SERIOUS / UNRESOLVED]" : "[INCIDENT]"}
+- State who reported, what happened, where (preserve gate/section IDs)
+- ${hasPhoto ? "Note photo evidence is attached." : "No photo attached."}
+- Give 2–4 immediate Lead decision points (authorize / dispatch / escalate)
+- If remediation options exist, reference them briefly without copying verbatim
+- ${protocolTitle ? `Protocol already auto-relevant: ${protocolTitle}` : "No emergency SOP auto-deployed yet."}
+- Concise, scannable, no fluff — this is matchday Command
+- Unique to THIS report — never a generic template`,
+    `Stadium: ${stadiumId}
+Reporter: ${reporterName}
+Report: ${incidentText}
+Suggested remediation options: ${(remediationOptions || []).join(" | ") || "(none yet)"}`,
+    { temperature: 0.4 }
+  );
+}
 
+/**
+ * Expand Ops Lead resolve choice into a full GenAI directive for the volunteer.
+ */
+export async function generateLeadResolutionDirective(input: {
+  stadiumId: string;
+  volunteerLanguage: string;
+  leadLanguage: string;
+  incidentText: string;
+  severity: string;
+  leadOption?: string;
+  customInstruction?: string;
+  leadName: string;
+}): Promise<string | null> {
+  const instruction =
+    input.customInstruction?.trim() ||
+    input.leadOption?.trim() ||
+    "Proceed per Operations Lead direction.";
+
+  return complete(
+    `You are StadiaChat Core. The Stadium Operations Lead just authorized a response.
+Write the DIRECTIVE the reporting volunteer will read in chat.
+Language: ${input.volunteerLanguage}
+Rules:
+- Open with clear ownership: Ops Lead ${input.leadName} instruction
+- Restate the incident briefly so the volunteer knows which report is closed
+- Expand the Lead's choice into concrete on-floor steps (2–5 bullets or short sentences)
+- Preserve gate/section/radio IDs as literals
+- Close with: report completion / radio when done
+- Action-oriented, no fluff, unique to this incident + instruction
+- Do not invent facts not implied by the incident or Lead instruction`,
+    `Stadium: ${input.stadiumId}
+Severity: ${input.severity}
+Original incident: ${input.incidentText}
+Lead authorized option: ${input.leadOption || "(none)"}
+Lead custom instruction: ${input.customInstruction || "(none)"}
+Core instruction to expand: ${instruction}`,
+    { temperature: 0.35 }
+  );
+}
+
+/**
+ * GenAI task card content when Ops Lead assigns work to a volunteer.
+ */
+export async function generateOpsTaskBriefing(input: {
+  stadiumId: string;
+  volunteerLanguage: string;
+  command: string;
+  locationTag?: string;
+  locationDetail?: string;
+  priority?: string;
+  planTitle?: string;
+}): Promise<{ task_title: string; task_body: string; location_tag: string } | null> {
+  const place =
+    input.locationDetail?.trim() ||
+    input.locationTag?.trim() ||
+    extractLocation(input.command);
+
+  const result = await complete(
+    `You are StadiaChat Core GenAI for Operations Lead task assignment (FIFA WC 2026).
+Turn the Lead command into a clear volunteer task card.
+Return JSON only:
+{"task_title":"short imperative title max 12 words","task_body":"2-4 short sentences or numbered steps the volunteer must do","location_tag":"gate/section/place"}
+Rules:
+- Language of task_title and task_body: ${input.volunteerLanguage}
+- Preserve gate/section IDs as literals
+- task_body must be actionable and specific to THIS command — not a generic template
+- Include priority awareness if critical/high
+- location_tag should be concrete place of assistance`,
+    `Stadium: ${input.stadiumId}
+Priority: ${input.priority || "medium"}
+Place of assistance: ${place}
+Plan context: ${input.planTitle || "(ad-hoc task)"}
+Lead command: ${input.command}`,
+    { json: true, temperature: 0.35 }
+  );
+
+  if (!result) return null;
+  try {
+    const cleaned = result.replace(/```json\n?|\n?```/g, "").trim();
+    const parsed = JSON.parse(cleaned) as {
+      task_title?: string;
+      task_body?: string;
+      location_tag?: string;
+    };
+    if (!parsed.task_title) return null;
+    return {
+      task_title: parsed.task_title,
+      task_body: parsed.task_body || parsed.task_title,
+      location_tag: parsed.location_tag || place,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * When emergency SOP matches, GenAI personalizes steps for the volunteer
+ * and writes an Ops awareness brief.
+ */
+export async function generateEmergencyProtocolDeploy(input: {
+  stadiumId: string;
+  volunteerLanguage: string;
+  opsLanguage: string;
+  reporterName: string;
+  incidentText: string;
+  protocolTitle: string;
+  protocolBody: string;
+  hasPhoto?: boolean;
+}): Promise<{ volunteerSteps: string | null; opsBrief: string | null }> {
+  const volunteerSteps = await complete(
+    `You are StadiaChat Critical Response GenAI for FIFA WC 2026.
+An emergency SOP matched. Deploy clear steps for the REPORTING VOLUNTEER.
+Language: ${input.volunteerLanguage}
+SOURCE OF TRUTH (do not contradict; adapt to this exact report):
+${input.protocolTitle}
+${input.protocolBody}
+Rules:
+- Numbered steps, life-safety first
+- Tie steps to the volunteer's report (location, condition)
+- Preserve gate/section IDs
+- No fluff, no heroics`,
+    `Stadium: ${input.stadiumId}
+Report: ${input.incidentText}
+Photo: ${input.hasPhoto ? "yes" : "no"}`,
+    { temperature: 0.25 }
+  );
+
+  const opsBrief = await complete(
+    `You are StadiaChat Core for the Operations Lead master terminal.
+An emergency protocol AUTO-DEPLOYED to a volunteer. Brief the Lead.
+Language: ${input.opsLanguage}
+Rules:
+- Tag [PROTOCOL AUTO-DEPLOYED]
+- Who reported, what, where
+- Which protocol deployed
+- What Lead should monitor / backstop
+- ${input.hasPhoto ? "Photo attached." : ""}
+- Concise, unique to this event`,
+    `Stadium: ${input.stadiumId}
+Reporter: ${input.reporterName}
+Protocol: ${input.protocolTitle}
+Report: ${input.incidentText}`,
+    { temperature: 0.35 }
+  );
+
+  return { volunteerSteps, opsBrief };
+}
+
+export async function generateSafetyDirective(
+  text: string,
+  context?: { stadiumId?: string; language?: string }
+): Promise<string> {
+  const system = `You are the StadiaChat Critical Threat GenAI safety override for FIFA World Cup 2026.
+Ops Lead did not respond within 300 seconds. Produce a defensive, high-caution safety directive for the reporting volunteer.
+Language: ${context?.language || "en"}
+Rules: concise numbered steps, no fluff, life safety and scene containment first, specific to THIS incident (location/hazard). Output plain text only.`;
+
+  const result = await complete(
+    system,
+    `Stadium: ${context?.stadiumId || "unknown"}\nIncident report: ${text}`,
+    { temperature: 0.15 }
+  );
+
+  const loc = extractLocation(text);
   return (
     result ||
-    "SAFETY OVERRIDE — UNRESOLVED CRITICAL INCIDENT:\n1. Prioritize life safety. Do not put yourself at risk.\n2. Create a clear buffer zone; divert non-essential foot traffic.\n3. Keep radio channel open; state section and condition every 60 seconds.\n4. Request nearest trained medical/security support on channel 1.\n5. Hold position until Operations Lead or Command issues new orders.\n6. Do not leave injured persons unattended if safe to remain."
+    `SAFETY OVERRIDE — UNRESOLVED CRITICAL INCIDENT (${loc}):\n1. Prioritize life safety. Do not put yourself at risk.\n2. Create a clear buffer zone at ${loc}; divert non-essential foot traffic.\n3. Keep radio channel open; state section and condition every 60 seconds.\n4. Request nearest trained medical/security support on channel 1.\n5. Hold position until Operations Lead or Command issues new orders.\n6. Do not leave injured persons unattended if safe to remain.`
   );
 }
 
@@ -481,9 +786,9 @@ export async function summarizeTask(command: string): Promise<{
 }> {
   const system = `Summarize an Operations Lead workflow command for a volunteer task card.
 Return JSON: {"task_title":"short summary","location_tag":"section/gate or General"}
-Preserve gate/section IDs as literals.`;
+Preserve gate/section IDs as literals. Make title specific to this command.`;
 
-  const result = await complete(system, command, { json: true, temperature: 0 });
+  const result = await complete(system, command, { json: true, temperature: 0.2 });
   if (result) {
     try {
       const cleaned = result.replace(/```json\n?|\n?```/g, "").trim();

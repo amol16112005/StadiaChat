@@ -116,5 +116,30 @@ export function heuristicClassify(text: string): ClassifiedCategory | null {
   ];
   if (minor.some((k) => t.includes(k))) return "C";
 
+  // Question-shaped ops queries → FAQ path (A), not identical Cat-C incident acks
+  if (looksLikeOpsQuestion(t)) return "A";
+
   return null;
+}
+
+/** Free-form questions should hit GenAI/FAQ, not default to Category C. */
+export function looksLikeOpsQuestion(text: string): boolean {
+  const t = text.toLowerCase().trim();
+  if (!t) return false;
+  if (/[?]/.test(t)) return true;
+  if (
+    /^(where|what|how|when|which|who|can i|do i|is there|are there|need to know|tell me|explain)\b/.test(
+      t
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(where is|where's|how do i|how can i|what is|what's|can you|please help|need (info|information|directions))\b/.test(
+      t
+    )
+  ) {
+    return true;
+  }
+  return false;
 }

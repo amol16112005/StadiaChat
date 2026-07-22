@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStickyChatScroll } from "@/lib/useStickyChatScroll";
 import { statusLabel, t } from "@/lib/i18n";
+import { GenAiStatusBadge } from "@/components/GenAiStatusBadge";
 
 type Msg = {
   id: string;
@@ -164,6 +165,7 @@ export default function OpsTimelinePage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <GenAiStatusBadge lang={lang} />
           <nav className="flex gap-1 rounded-lg border border-[var(--border)] p-0.5 bg-[var(--panel)]">
             <Link href="/ops" className="btn text-xs py-1.5 px-2.5">
               {t(lang, "ops.navCritical")}

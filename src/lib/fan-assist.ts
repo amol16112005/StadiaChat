@@ -456,6 +456,47 @@ export async function processFanAssist(
       matchProtocol(matchText, protocols) || matchProtocol(text, protocols);
     if (matched) {
       protocol_title = matched.title;
+      category = "A";
+    } else {
+      category = "faq_miss";
+    }
+
+    const protocolSource = matched
+      ? protocolBody(matched, "en")
+      : undefined;
+    const facilityHint = isInStadiumFacilityQuery(matchText)
+      ? `This is an IN-STADIUM facility question (food, concessions, shops, amenities, wayfinding). You MUST give a helpful on-venue answer — never refuse as tourism. Cover typical locations on main concourses, near gates/sections, Guest Services, and payment (card usually accepted). If exact stall map is unknown, give general stadium ops guidance and offer to escort to nearest concession / Guest Services.`
+      : `Answer with internal stadium operational info only.`;
+
+    // Always try GenAI so spoken answers are contextual — not the same canned SOP every time.
+    const llmAnswer = await complete(
+      `You are StadiaChat Fan Assist for FIFA World Cup 2026 stadium volunteers helping fans on the floor.
+${facilityHint}
+${
+  protocolSource
+    ? `SOURCE OF TRUTH (official protocol — do not contradict; rephrase for this fan's exact question):\nTitle: ${protocol_title}\n${protocolSource}`
+    : "No exact protocol matched — use sound stadium ops guidance."
+}
+Be concise, spoken-friendly (short sentences), no filler, no apologies monologue.
+Reply in language code: ${answerLang}.
+Preserve gate/section IDs as literals.
+Do NOT talk only about restrooms unless the fan asked about restrooms.
+Do NOT say you can only help with restrooms.
+Do NOT redirect to city Fan Guide for in-stadium food or facilities.
+Make the answer specific to THIS fan question — do not paste a generic template.
+Use recent memory only if relevant; do not invent past events.`,
+      `Stadium ID: ${session.stadium_id}
+Known protocol titles: ${protocols.map((p) => p.title).join("; ") || "(none)"}
+${memoryBlock || "(no prior memory)"}
+Fan said: ${text}
+English gloss: ${matchText}`,
+      { temperature: 0.35 }
+    );
+
+    if (llmAnswer) {
+      answer = llmAnswer;
+    } else if (matched) {
+      // Offline fallback: localized protocol body
       if (matched.body[answerLang]) {
         answer = matched.body[answerLang];
       } else {
@@ -465,39 +506,11 @@ export async function processFanAssist(
           "en"
         );
       }
-      category = "A";
     } else {
-      category = "faq_miss";
-      const facilityHint = isInStadiumFacilityQuery(matchText)
-        ? `This is an IN-STADIUM facility question (food, concessions, shops, amenities, wayfinding). You MUST give a helpful on-venue answer — never refuse as tourism. Cover typical locations on main concourses, near gates/sections, Guest Services, and payment (card usually accepted). If exact stall map is unknown, give general stadium ops guidance and offer to escort to nearest concession / Guest Services.`
-        : `Answer with internal stadium operational info only.`;
-
-      const fallback = await complete(
-        `You are StadiaChat Fan Assist for FIFA World Cup 2026 stadium volunteers helping fans on the floor.
-${facilityHint}
-Be concise, spoken-friendly (short sentences), no filler, no apologies monologue.
-Reply in language code: ${answerLang}.
-Preserve gate/section IDs as literals.
-Do NOT talk only about restrooms unless the fan asked about restrooms.
-Do NOT say you can only help with restrooms.
-Do NOT redirect to city Fan Guide for in-stadium food or facilities.
-Use recent memory only if relevant; do not invent past events.`,
-        `Stadium ID: ${session.stadium_id}
-Known protocol titles: ${protocols.map((p) => p.title).join("; ") || "(none)"}
-${memoryBlock || "(no prior memory)"}
-Fan said: ${text}
-English gloss: ${matchText}`,
-        { temperature: 0.25 }
-      );
-
-      // Deterministic facility fallback if LLM unavailable
       const facilityFallbackEn = isInStadiumFacilityQuery(matchText)
         ? buildFacilityFallback(matchText, session.stadium_id)
         : "I could not find a matching stadium protocol. Please ask Guest Services at the nearest information desk.";
-
-      answer =
-        fallback ||
-        (await translateText(facilityFallbackEn, answerLang, "en"));
+      answer = await translateText(facilityFallbackEn, answerLang, "en");
     }
   }
 

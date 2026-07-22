@@ -20,11 +20,15 @@ import { matchProtocol, protocolBody } from "./protocol-match";
 import {
   OUT_OF_SCOPE_TEMPLATE,
   classifyMessage,
+  generateEmergencyProtocolDeploy,
+  generateLeadResolutionDirective,
+  generateOpsIncidentBriefing,
+  generateOpsTaskBriefing,
   generateRemediationOptions,
   generateSafetyDirective,
+  generateVolunteerChatReply,
   summarizeTask,
   translateText,
-  complete,
 } from "./xai";
 
 import { SAFETY_OVERRIDE_SECONDS } from "./ops-constants";
@@ -125,25 +129,34 @@ export async function processVolunteerMessage(
 
   if (category === "A") {
     const matched = matchProtocol(body, protocols, "faq");
+    const matchedBody = matched
+      ? protocolBody(matched, session.preferred_language)
+      : undefined;
+
+    // Always try GenAI so chat replies are contextual, not a single canned string.
+    // Protocol text is SOURCE OF TRUTH when matched; otherwise free operational answer.
+    const llm = await generateVolunteerChatReply({
+      stadiumId,
+      language: session.preferred_language,
+      query: body,
+      protocolTitle: matched?.title,
+      protocolBody: matchedBody,
+      protocolTitles: faqTitles,
+      memoryBlock: memoryBlock || undefined,
+      mode: "faq",
+      hasPhoto,
+    });
+
     let answer: string;
-    if (matched) {
-      answer = protocolBody(matched, session.preferred_language);
+    if (llm) {
+      answer = llm;
+    } else if (matchedBody) {
+      answer = matchedBody;
     } else if (isInStadiumFacilityQuery(body)) {
-      // In-stadium amenity with no exact SOP — still answer, don't fail closed
-      const llm = await complete(
-        `You are StadiaChat for FIFA World Cup 2026 stadium ops.
-The volunteer/fan asked about an IN-STADIUM facility (food, concessions, merch, amenities, wayfinding).
-Give a concise operational answer for this stadium. Never refuse as tourism. Never answer only about restrooms unless asked.
-Language: ${session.preferred_language}. Preserve gate/section IDs.`,
-        `Stadium: ${stadiumId}\nProtocols available: ${protocols.map((p) => p.title).join("; ")}\nQuery: ${body}`,
-        { temperature: 0.25 }
+      answer = await localized(
+        "In-stadium facilities (food, shops, water, Guest Services) are on the main concourses—follow overhead signs from your section. For the nearest stall or desk, use Guest Services or ask a steward to point the route.",
+        session.preferred_language
       );
-      answer =
-        llm ||
-        (await localized(
-          "In-stadium facilities (food, shops, water, Guest Services) are on the main concourses—follow overhead signs from your section. For the nearest stall or desk, use Guest Services or ask a steward to point the route.",
-          session.preferred_language
-        ));
     } else {
       answer = await localized(
         hasPhoto
@@ -174,7 +187,11 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
   }
 
   if (category === "C") {
-    const options = await generateRemediationOptions(body, "normal");
+    const options = await generateRemediationOptions(body, "normal", {
+      stadiumId,
+      reporterName: session.name,
+      hasPhoto,
+    });
     const incident: Incident = {
       id: newId("inc"),
       stadium_id: stadiumId,
@@ -191,11 +208,22 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
 
     const opsLead = await getOpsLead(stadiumId);
     const opsLang = opsLead?.preferred_language || "en";
-    const alertText = await localized(
-      `[INCIDENT${hasPhoto ? " + PHOTO" : ""}] ${session.name}: ${body}`,
-      opsLang,
-      session.preferred_language
-    );
+    const genOpsBrief = await generateOpsIncidentBriefing({
+      stadiumId,
+      opsLanguage: opsLang,
+      reporterName: session.name,
+      incidentText: body,
+      severity: "normal",
+      hasPhoto,
+      remediationOptions: options,
+    });
+    const alertText =
+      genOpsBrief ||
+      (await localized(
+        `[INCIDENT${hasPhoto ? " + PHOTO" : ""}] ${session.name}: ${body}\nRemediation options ready — authorize one or write custom instruction.`,
+        opsLang,
+        session.preferred_language
+      ));
 
     const alert: ChatMessage = {
       id: newId("msg"),
@@ -216,12 +244,21 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
     };
     await addMessage(alert);
 
-    const ack = await localized(
-      hasPhoto
-        ? "Photo and incident logged for your Stadium Operations Lead with remediation options."
-        : "Incident logged and routed to your Stadium Operations Lead with remediation options.",
-      session.preferred_language
-    );
+    const genAck = await generateVolunteerChatReply({
+      stadiumId,
+      language: session.preferred_language,
+      query: body,
+      mode: "incident_ack",
+      hasPhoto,
+    });
+    const ack =
+      genAck ||
+      (await localized(
+        hasPhoto
+          ? `Logged for your Stadium Operations Lead (photo attached): "${body.slice(0, 160)}". Hold position; remediation options sent to Ops.`
+          : `Logged for your Stadium Operations Lead: "${body.slice(0, 160)}". Hold position; remediation options sent to Ops.`,
+        session.preferred_language
+      ));
     const reply: ChatMessage = {
       id: newId("msg"),
       stadium_id: stadiumId,
@@ -249,7 +286,20 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
   // Category D — Serious
   const emergency = matchProtocol(body, protocols, "emergency");
   if (emergency) {
-    const steps = protocolBody(emergency, session.preferred_language);
+    const sopBody = protocolBody(emergency, session.preferred_language);
+    const opsLeadEm = await getOpsLead(stadiumId);
+    const opsLangEm = opsLeadEm?.preferred_language || "en";
+    const deployed = await generateEmergencyProtocolDeploy({
+      stadiumId,
+      volunteerLanguage: session.preferred_language,
+      opsLanguage: opsLangEm,
+      reporterName: session.name,
+      incidentText: body,
+      protocolTitle: emergency.title,
+      protocolBody: protocolBody(emergency, "en"),
+      hasPhoto,
+    });
+    const steps = deployed.volunteerSteps || sopBody;
     const reply: ChatMessage = {
       id: newId("msg"),
       stadium_id: stadiumId,
@@ -266,6 +316,9 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
     await addMessage(reply);
 
     // Inform ops for awareness but do not block volunteer
+    const opsNoteText =
+      deployed.opsBrief ||
+      `[PROTOCOL AUTO-DEPLOYED] ${emergency.title} — reported by ${session.name}: ${body}`;
     const opsNote: ChatMessage = {
       id: newId("msg"),
       stadium_id: stadiumId,
@@ -273,8 +326,9 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
       sender_name: "StadiaChat Core",
       sender_role: "System",
       recipient_id: "broadcast_ops",
-      text: `[PROTOCOL AUTO-DEPLOYED] ${emergency.title} — reported by ${session.name}: ${body}`,
-      language: "en",
+      text: opsNoteText,
+      original_text: body,
+      language: opsLangEm,
       category: "D",
       ui_component: "text",
       attachments: attachments?.length ? attachments : undefined,
@@ -290,7 +344,11 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
   }
 
   // No protocol — escalate with 300s timer
-  const options = await generateRemediationOptions(body, "serious");
+  const options = await generateRemediationOptions(body, "serious", {
+    stadiumId,
+    reporterName: session.name,
+    hasPhoto,
+  });
   const deadline = new Date(Date.now() + TIMER_DURATION_S * 1000).toISOString();
   const incident: Incident = {
     id: newId("inc"),
@@ -310,11 +368,22 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
 
   const opsLead = await getOpsLead(stadiumId);
   const opsLang = opsLead?.preferred_language || "en";
-  const seriousText = await localized(
-    `[SERIOUS - UNRESOLVED INCIDENT${hasPhoto ? " + PHOTO" : ""}] ${session.name}: ${body}`,
-    opsLang,
-    session.preferred_language
-  );
+  const genSeriousOps = await generateOpsIncidentBriefing({
+    stadiumId,
+    opsLanguage: opsLang,
+    reporterName: session.name,
+    incidentText: body,
+    severity: "serious",
+    hasPhoto,
+    remediationOptions: options,
+  });
+  const seriousText =
+    genSeriousOps ||
+    (await localized(
+      `[SERIOUS - UNRESOLVED INCIDENT${hasPhoto ? " + PHOTO" : ""}] ${session.name}: ${body}\n300s safety timer active — authorize remediation or GenAI override deploys.`,
+      opsLang,
+      session.preferred_language
+    ));
 
   const seriousAlert: ChatMessage = {
     id: newId("msg"),
@@ -336,10 +405,19 @@ Language: ${session.preferred_language}. Preserve gate/section IDs.`,
   };
   await addMessage(seriousAlert);
 
-  const volAck = await localized(
-    "SERIOUS INCIDENT escalated to your Stadium Operations Lead. A reply will arrive shortly (within a few minutes) — either from your Operations Lead with instructions, or an automated GenAI safety directive that assesses the situation if Ops has not responded in time. Follow on-scene safety measures until then.",
-    session.preferred_language
-  );
+  const genSerious = await generateVolunteerChatReply({
+    stadiumId,
+    language: session.preferred_language,
+    query: body,
+    mode: "serious_ack",
+    hasPhoto,
+  });
+  const volAck =
+    genSerious ||
+    (await localized(
+      `SERIOUS INCIDENT escalated to your Stadium Operations Lead: "${body.slice(0, 160)}". A reply will arrive shortly — either from your Operations Lead, or an automated GenAI safety directive if Ops has not responded in time. Prioritize life safety and hold the scene until directed.`,
+      session.preferred_language
+    ));
   const reply: ChatMessage = {
     id: newId("msg"),
     stadium_id: stadiumId,
@@ -387,27 +465,55 @@ export async function processLeadTaskAssignment(
     throw new Error("Volunteer not found or not approved");
   }
 
-  const summarized = await summarizeTask(command);
+  const targetLang = volunteer.preferred_language;
+  const placeHint =
+    (options?.location_tag && options.location_tag !== "Custom"
+      ? options.location_tag
+      : undefined) || options?.location_detail?.trim();
+
+  // GenAI expands Lead command into a clear, language-localized task card
+  const genTask = await generateOpsTaskBriefing({
+    stadiumId: session.stadium_id,
+    volunteerLanguage: targetLang,
+    command,
+    locationTag: options?.location_tag,
+    locationDetail: options?.location_detail,
+    priority: options?.priority,
+  });
+
+  const summarized = genTask
+    ? {
+        task_title: genTask.task_title,
+        location_tag: genTask.location_tag,
+      }
+    : await summarizeTask(command);
+
   const location_tag =
     (options?.location_tag && options.location_tag !== "Custom"
       ? options.location_tag
       : options?.location_detail?.trim()) ||
     summarized.location_tag ||
+    placeHint ||
     "General";
   const location_detail =
     options?.location_detail?.trim() ||
     (options?.location_tag === "Custom" ? options.location_detail : undefined);
 
-  const task_title = summarized.task_title;
-  const targetLang = volunteer.preferred_language;
-  const title =
-    targetLang === session.preferred_language
-      ? task_title
-      : await translateText(task_title, targetLang, session.preferred_language);
+  let title = summarized.task_title;
+  if (!genTask && targetLang !== session.preferred_language) {
+    title = await translateText(
+      title,
+      targetLang,
+      session.preferred_language
+    );
+  }
 
   const placeLine = location_detail
     ? `${location_tag} — ${location_detail}`
     : location_tag;
+
+  // Full GenAI briefing body on the card (not just a short title)
+  const cardText = genTask?.task_body || title;
 
   const card: ChatMessage = {
     id: newId("msg"),
@@ -416,7 +522,7 @@ export async function processLeadTaskAssignment(
     sender_name: session.name,
     sender_role: "Operations_Lead",
     recipient_id: volunteerId,
-    text: title,
+    text: cardText,
     original_text: command,
     language: targetLang,
     ui_component: "actionable_task_card",
@@ -459,11 +565,25 @@ export async function resolveIncidentByLead(
 
   const reporter = await getUserById(incident.reporter_id);
   const targetLang = reporter?.preferred_language || "en";
-  const body = await translateText(
-    `Ops Lead instruction: ${instruction}`,
-    targetLang,
-    session.preferred_language
-  );
+
+  // GenAI expands Lead checkbox / custom text into a full volunteer directive
+  const genDirective = await generateLeadResolutionDirective({
+    stadiumId: session.stadium_id,
+    volunteerLanguage: targetLang,
+    leadLanguage: session.preferred_language,
+    incidentText: incident.text,
+    severity: incident.severity,
+    leadOption: option,
+    customInstruction,
+    leadName: session.name,
+  });
+  const body =
+    genDirective ||
+    (await translateText(
+      `Ops Lead ${session.name} instruction: ${instruction}\nIncident: ${incident.text}\nExecute now and radio when complete.`,
+      targetLang,
+      session.preferred_language
+    ));
 
   const updated = await updateIncident(incidentId, {
     status: "resolved",
@@ -510,10 +630,17 @@ export async function processExpiredSeriousTimers(
   );
 
   for (const incident of open) {
-    const directive = await generateSafetyDirective(incident.text);
     const reporter = await getUserById(incident.reporter_id);
     const targetLang = reporter?.preferred_language || "en";
-    const body = await translateText(directive, targetLang, "en");
+    const directive = await generateSafetyDirective(incident.text, {
+      stadiumId: incident.stadium_id,
+      language: targetLang,
+    });
+    // Directive already requested in volunteer language when possible
+    const body =
+      targetLang === "en"
+        ? directive
+        : (await translateText(directive, targetLang, "en")) || directive;
 
     await updateIncident(incident.id, {
       status: "safety_override",
@@ -539,6 +666,16 @@ export async function processExpiredSeriousTimers(
     await addMessage(msg);
     deployed.push(msg);
 
+    const opsLang = "en";
+    const opsOverrideBrief = await generateOpsIncidentBriefing({
+      stadiumId: incident.stadium_id,
+      opsLanguage: opsLang,
+      reporterName: incident.reporter_name,
+      incidentText: `${incident.text}\n\n[SAFETY OVERRIDE DEPLOYED after 300s — Lead did not authorize in time]\nDirective sent to volunteer:\n${directive}`,
+      severity: "serious",
+      remediationOptions: incident.remediation_options,
+    });
+
     const opsNotify: ChatMessage = {
       id: newId("msg"),
       stadium_id: incident.stadium_id,
@@ -546,8 +683,11 @@ export async function processExpiredSeriousTimers(
       sender_name: "StadiaChat Core",
       sender_role: "System",
       recipient_id: "broadcast_ops",
-      text: `[SAFETY OVERRIDE] 300s elapsed — directive auto-deployed for incident ${incident.id}`,
-      language: "en",
+      text:
+        opsOverrideBrief ||
+        `[SAFETY OVERRIDE] 300s elapsed — GenAI directive auto-deployed for ${incident.reporter_name}: ${incident.text.slice(0, 120)}`,
+      original_text: directive,
+      language: opsLang,
       category: "D",
       ui_component: "text",
       incident_id: incident.id,

@@ -63,6 +63,11 @@ export function VolunteerMessageBubble({
           )}
         </div>
         <div className="font-semibold">{m.task_title || m.text}</div>
+        {m.text && m.task_title && m.text.trim() !== m.task_title.trim() ? (
+          <div className="text-sm whitespace-pre-wrap leading-relaxed mt-2 text-[var(--fg)]">
+            {m.text}
+          </div>
+        ) : null}
         <div className="text-sm text-emerald-300 mt-1 font-medium">
           <span className="sr-only">{t(lang, "vol.location")}: </span>
           {m.location_tag || t(lang, "vol.general")}

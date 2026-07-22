@@ -9,6 +9,7 @@ import {
   VolunteerMessageBubble,
   type VolunteerMsg,
 } from "@/components/VolunteerMessageBubble";
+import { GenAiStatusBadge } from "@/components/GenAiStatusBadge";
 import { statusLabel, t } from "@/lib/i18n";
 import { MAX_PHOTO_BYTES, MAX_PHOTO_MB } from "@/lib/upload-limits";
 
@@ -233,6 +234,7 @@ export default function VolunteerPage() {
           className="flex items-center gap-2 flex-wrap justify-end"
           aria-label={t(lang, "vol.navLabel")}
         >
+          <GenAiStatusBadge lang={lang} />
           <FanVoiceAssist
             lang={lang}
             disabled={session.status !== "approved"}

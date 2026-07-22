@@ -36,4 +36,15 @@ describe("heuristicClassify A–D", () => {
       "B"
     );
   });
+
+  it("question-shaped free text routes to A (not null → C)", () => {
+    assert.equal(
+      heuristicClassify("How should I handle a fan who lost their phone?"),
+      "A"
+    );
+    assert.equal(
+      heuristicClassify("What radio channel do I use for medical?"),
+      "A"
+    );
+  });
 });

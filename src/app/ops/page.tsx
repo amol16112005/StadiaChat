@@ -10,6 +10,7 @@ import {
   PLAN_PRIORITIES,
   PLAN_STATUSES,
 } from "@/lib/locations";
+import { GenAiStatusBadge } from "@/components/GenAiStatusBadge";
 
 type User = {
   id: string;
@@ -355,6 +356,7 @@ export default function OpsPage() {
           className="flex items-center gap-2 flex-wrap"
           aria-label={t(lang, "ops.navLabel")}
         >
+          <GenAiStatusBadge lang={lang} />
           <span className="badge badge-d">
             {t(lang, "ops.catD")}: {openCriticalIncidents.length}
           </span>
